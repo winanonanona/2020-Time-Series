@@ -1,4 +1,4 @@
-# Gephi Instructions
+# Sequence processing instructions
 Author: Winona Wijaya
 Last updated: 20 Jul 2022
 
