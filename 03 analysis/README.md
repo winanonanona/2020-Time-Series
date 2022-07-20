@@ -1,4 +1,4 @@
-# Gephi Instructions
+# Sequence Analysis instructions
 Author: Winona Wijaya
 Last updated: 20 Jul 2022
 
