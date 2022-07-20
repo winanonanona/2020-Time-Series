@@ -1,0 +1,122 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+# Introduction
+Author: Winona Wijaya
+Last updated: 20 Jul 2022
+
+Done:
+- Autocorrelation on environmental variables to see whether there are temporal patterns to them
+- Done per site
+
+```{r}
+library("tidyverse")
+library("grid")
+library("gridExtra")
+library("forecast")
+metadata_ts <- readRDS("19_metadata_ts.RDS")
+source("~/OneDrive - Nanyang Technological University/common bioinformatics/extra_functions copy.R")
+options(stringsAsFactors = FALSE)
+
+dir_phyloseq <- "./phyloseq/"
+dir_corr <- "./corr/"
+dir_main <- "./main/"
+dir_supp <- "./supplementary/"
+```
+
+# SBW
+```{r}
+metadata_loc <- metadata_ts %>% 
+  filter(Site == "SBW")
+
+acf_rain2 <- ggAcf(metadata_loc$Rain_2, lag.max = 14) + labs(title = "Cumulative 2-day Rain")
+acf_chlu <- ggAcf(metadata_loc$Chlorophyll_Unfiltered, lag.max = 14) + labs(title = "Unfiltered Chlorophyll concentration")
+acf_sal <- ggAcf(metadata_loc$Salinity, lag.max = 14) + labs(title = "Salinity")
+acf_din <- ggAcf(metadata_loc$DIN, lag.max = 14) + labs(title = "Dissolved Inorganic Nitrogen")
+acf_po4 <- ggAcf(metadata_loc$Phosphate, lag.max = 14) + labs(title = "Phosphate")
+acf_si <- ggAcf(metadata_loc$Silicate, lag.max = 14) + labs(title = "Silicate")
+acf_nsi <- ggAcf(metadata_loc$DIN.Si, lag.max = 14) + labs(title = "DIN:Si Ratio")
+acf_np <- ggAcf(metadata_loc$DIN.PO4, lag.max = 14) + labs(title = "DIN:PO4 Ratio")
+acf_fvir <- ggAcf(metadata_loc$Virus.ml, lag.max = 14) + labs(title = "Virus counts per mL")
+acf_fbac <- ggAcf(metadata_loc$Bacteria.ml, lag.max = 14) + labs(title = "Bacteria counts per mL")
+
+
+p_all <- grid.arrange(acf_rain2, acf_chlu, acf_sal, acf_din, acf_po4, acf_si, acf_nsi, acf_np, acf_fvir, acf_fbac, ncol = 2, top = textGrob("Metadata Autocorrelation at Sembawang", gp = gpar(fontsize = 20)))
+print(p_all)
+ggsave(paste0(dir_supp, "autocorr_sbw.jpg"), plot = p_all, width = 20, height = 27, units = "cm", dpi = "print")
+
+```
+
+
+# SNB
+```{r}
+metadata_loc <- metadata_ts %>% 
+  filter(Site == "SNB")
+
+acf_rain2 <- ggAcf(metadata_loc$Rain_2, lag.max = 14) + labs(title = "Cumulative 2-day Rain")
+acf_chlu <- ggAcf(metadata_loc$Chlorophyll_Unfiltered, lag.max = 14) + labs(title = "Unfiltered Chlorophyll concentration")
+acf_sal <- ggAcf(metadata_loc$Salinity, lag.max = 14) + labs(title = "Salinity")
+acf_din <- ggAcf(metadata_loc$DIN, lag.max = 14) + labs(title = "Dissolved Inorganic Nitrogen")
+acf_po4 <- ggAcf(metadata_loc$Phosphate, lag.max = 14) + labs(title = "Phosphate")
+acf_si <- ggAcf(metadata_loc$Silicate, lag.max = 14) + labs(title = "Silicate")
+acf_nsi <- ggAcf(metadata_loc$DIN.Si, lag.max = 14) + labs(title = "DIN:Si Ratio")
+acf_np <- ggAcf(metadata_loc$DIN.PO4, lag.max = 14) + labs(title = "DIN:PO4 Ratio")
+acf_fvir <- ggAcf(metadata_loc$Virus.ml, lag.max = 14) + labs(title = "Virus counts per mL")
+acf_fbac <- ggAcf(metadata_loc$Bacteria.ml, lag.max = 14) + labs(title = "Bacteria counts per mL")
+
+
+p_all <- grid.arrange(acf_rain2, acf_chlu, acf_sal, acf_din, acf_po4, acf_si, acf_nsi, acf_np, acf_fvir, acf_fbac, ncol = 2, top = textGrob("Metadata Autocorrelation at Senibong", gp = gpar(fontsize = 20)))
+print(p_all)
+ggsave(paste0(dir_supp, "autocorr_snb.jpg"), plot = p_all, width = 20, height = 27, units = "cm", dpi = "print")
+
+```
+
+
+# STL
+```{r}
+metadata_loc <- metadata_ts %>% 
+  filter(Site == "STL")
+
+acf_rain2 <- ggAcf(metadata_loc$Rain_2, lag.max = 14) + labs(title = "Cumulative 2-day Rain")
+acf_chlu <- ggAcf(metadata_loc$Chlorophyll_Unfiltered, lag.max = 14) + labs(title = "Unfiltered Chlorophyll concentration")
+acf_sal <- ggAcf(metadata_loc$Salinity, lag.max = 14) + labs(title = "Salinity")
+acf_din <- ggAcf(metadata_loc$DIN, lag.max = 14) + labs(title = "Dissolved Inorganic Nitrogen")
+acf_po4 <- ggAcf(metadata_loc$Phosphate, lag.max = 14) + labs(title = "Phosphate")
+acf_si <- ggAcf(metadata_loc$Silicate, lag.max = 14) + labs(title = "Silicate")
+acf_nsi <- ggAcf(metadata_loc$DIN.Si, lag.max = 14) + labs(title = "DIN:Si Ratio")
+acf_np <- ggAcf(metadata_loc$DIN.PO4, lag.max = 14) + labs(title = "DIN:PO4 Ratio")
+acf_fvir <- ggAcf(metadata_loc$Virus.ml, lag.max = 14) + labs(title = "Virus counts per mL")
+acf_fbac <- ggAcf(metadata_loc$Bacteria.ml, lag.max = 14) + labs(title = "Bacteria counts per mL")
+
+
+p_all <- grid.arrange(acf_rain2, acf_chlu, acf_sal, acf_din, acf_po4, acf_si, acf_nsi, acf_np, acf_fvir, acf_fbac, ncol = 2, top = textGrob("Metadata Autocorrelation at Stulang", gp = gpar(fontsize = 20)))
+print(p_all)
+ggsave(paste0(dir_supp, "autocorr_stl.jpg"), plot = p_all, width = 20, height = 27, units = "cm", dpi = "print")
+
+```
+
+
+# WDL
+```{r}
+metadata_loc <- metadata_ts %>% 
+  filter(Site == "WDL")
+
+acf_rain2 <- ggAcf(metadata_loc$Rain_2, lag.max = 14) + labs(title = "Cumulative 2-day Rain")
+acf_chlu <- ggAcf(metadata_loc$Chlorophyll_Unfiltered, lag.max = 14) + labs(title = "Unfiltered Chlorophyll concentration")
+acf_sal <- ggAcf(metadata_loc$Salinity, lag.max = 14) + labs(title = "Salinity")
+acf_din <- ggAcf(metadata_loc$DIN, lag.max = 14) + labs(title = "Dissolved Inorganic Nitrogen")
+acf_po4 <- ggAcf(metadata_loc$Phosphate, lag.max = 14) + labs(title = "Phosphate")
+acf_si <- ggAcf(metadata_loc$Silicate, lag.max = 14) + labs(title = "Silicate")
+acf_nsi <- ggAcf(metadata_loc$DIN.Si, lag.max = 14) + labs(title = "DIN:Si Ratio")
+acf_np <- ggAcf(metadata_loc$DIN.PO4, lag.max = 14) + labs(title = "DIN:PO4 Ratio")
+acf_fvir <- ggAcf(metadata_loc$Virus.ml, lag.max = 14) + labs(title = "Virus counts per mL")
+acf_fbac <- ggAcf(metadata_loc$Bacteria.ml, lag.max = 14) + labs(title = "Bacteria counts per mL")
+
+
+p_all <- grid.arrange(acf_rain2, acf_chlu, acf_sal, acf_din, acf_po4, acf_si, acf_nsi, acf_np, acf_fvir, acf_fbac, ncol = 2, top = textGrob("Metadata Autocorrelation at Woodlands", gp = gpar(fontsize = 20)))
+print(p_all)
+ggsave(paste0(dir_supp, "autocorr_wdl.jpg"), plot = p_all, width = 20, height = 27, units = "cm", dpi = "print")
+
+```

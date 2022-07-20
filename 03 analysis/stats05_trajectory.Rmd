@@ -1,0 +1,333 @@
+---
+title: "Metadata exploration"
+output: html_notebook
+---
+
+# Introduction
+Author: Winona Wijaya
+Last updated: 20 Jul 2022
+
+Done:
+- nMDS + envfit
+- PCA
+- CCA
+- plot that shows different taxa alternating to be the dominant species & environmental variables to accompany CCA results
+
+
+# Load Everything
+## Load Libraries
+```{r, message = FALSE, results = "hide", echo = F}
+library("tidyverse")
+library("ggpubr")
+library("gridExtra")
+library("Biostrings")
+library("lubridate")
+
+library("phyloseq")
+library("vegan")
+
+library("viridis")
+source("~/OneDrive - Nanyang Technological University/common bioinformatics/extra_functions copy.R")
+options(stringsAsFactors = FALSE)
+
+dir_phyloseq <- "./phyloseq/"
+dir_main <- "./main/"
+dir_supp <- "./supplementary/"
+
+```
+
+## Load the previously made file
+```{r}
+# Run for lazy loading
+ps_ts <- readRDS("./19_phyloseq_ts.RDS")
+metadata_ts <- readRDS("./19_metadata_ts.RDS")
+metadata_ts_numsites <- readRDS("./20_metadata_ts_numsites.RDS")
+centroids_ts <- readRDS("./20_centroids.RDS")
+
+asvtab_ts <- otu_table(ps_ts)
+asvtab_ts <- as.data.frame(asvtab_ts@.Data)
+```
+
+
+```{r}
+#species in columns
+asvtab_ts_t <- as.data.frame(t(asvtab_ts))
+
+dist_day_append <- data.frame(day_diff = 0, distance = 0)
+
+sites <- c("SBW", "SNB", "STL", "WDL")
+
+for (site in sites){
+  asvtab_site <- asvtab_ts_t[grepl(site, rownames(asvtab_ts_t)) , ] #divide for each site
+  ts_dist_site <- as.matrix(vegdist(asvtab_site)) #get distances
+  
+  #make loop for all sites
+  
+  for (col in 1:ncol(ts_dist_site)){
+    temp_start <- colnames(ts_dist_site)[col] #rowname - colname
+    temp_start <- metadata_ts$Date_dmy[which(metadata_ts$sample_label == temp_start)]
+    for (row in 1:nrow(ts_dist_site)){
+      if (row > col){ #no need to calculate the upper triangle
+        temp_end <- rownames(ts_dist_site)[row] #rowname - colname
+        temp_end <- metadata_ts$Date_dmy[which(metadata_ts$sample_label == temp_end)]
+        temp_diff <- abs(as.numeric(temp_end-temp_start))
+        temp_dist_day <- data.frame(day_diff = temp_diff, distance = ts_dist_site[row, col])
+        dist_day_append <- rbind(dist_day_append, temp_dist_day)
+      }
+    }
+  }
+}
+
+dist_day <- dist_day_append %>% 
+  arrange(day_diff) %>% 
+  group_by(day_diff) %>% 
+  summarise(mean = mean(distance))
+
+ggplot(data = dist_day_append, mapping = aes(day_diff, distance)) +
+  geom_smooth(colour = "darkgreen", method = "loess") +
+  #geom_smooth(data = dist_day, mapping = aes(x = day_diff, y = mean), colour = "darkred") +
+  geom_point(alpha = 0.05, shape = 1) +
+  stat_summary(geom = "pointrange", size = 0.2) +
+  scale_y_reverse()
+ggsave("trajectory.jpeg", path = "./supplementary/", width = 29, height = 20, units = "cm", dpi = "print")
+```
+gets more disimilar as day_diff increases but does not go to distance of 1. Seems like the max ish distance is 0.75 (the rest after that may be due to lower sample counts with large difference in day). But max distance is 0.75 --> like jed fuhrman's 2015 review, the distance never really goes out of whack, got invisible hand that keeps it together. Read the paper!
+
+# nMDS & envfit
+```{r}
+set.seed(1)
+nmds_bray <- ordinate(ps_ts, method = "NMDS", distance = "bray")
+
+metadata_ts_numeric <- metadata_ts_numsites %>% 
+  select_if(is.numeric) %>% 
+  select(-simpson, -avg_distance, -to_centre)
+ts_envfit <- envfit(nmds_bray, metadata_ts_numeric, permutations = 999, na.rm = TRUE) 
+ts_envfit_scores <- scores(ts_envfit, "vectors")[ts_envfit$vectors$pvals<0.005, ]
+ts_envfit_coord <- as.data.frame(ts_envfit_scores) * ordiArrowMul(ts_envfit) * 1.25 # only plot arrows that are significant
+
+ts_envfit_length <- sort(sqrt((ts_envfit_scores[ , 1])^2 + (ts_envfit_scores[ , 2])^2))
+ts_envfit_length
+```
+
+
+```{r}
+p <- plot_ordination(physeq = ps_ts, ordination = nmds_bray, color = "Sampling_Day") +
+  scale_color_viridis_c("Sampling Day") +
+  geom_path(data = centroids_ts, mapping = aes(x = MDS1, y = MDS2), color = "red") +
+  geom_label(data = centroids_ts, mapping = aes(x = MDS1, y = MDS2, label = day_chr), fill = "grey", color = "red") +
+  theme_bw() +
+  coord_fixed()
+
+p1 <- p +
+  geom_segment(data = ts_envfit_coord, mapping = aes(x = 0, y = 0, xend = NMDS1, yend = NMDS2), 
+               size = 0.1, colour = "black", arrow = arrow(length = unit(0.05, "npc"))) +
+  geom_text(data = ts_envfit_coord, mapping = aes(x = NMDS1, y = NMDS2), label = row.names(ts_envfit_coord),
+            colour = "grey30", fontface = "bold")
+print(p1)
+ggsave(plot = p1, filename = paste0(dir_phyloseq,"ord_succession_path_envfit.png"), width = 30, height = 20, units = "cm", device = "png")
+
+stressplot(nmds_bray) # Shepard plot. Large scatter around the line suggests that original dissimilarities are not well preserved in the reduced number of dimensions.
+```
+
+
+
+
+
+## PCA with family
+```{r}
+library(factoextra)
+ps_fam <- tax_glom(ps_ts, "Family")
+df_fam <- veganifyOTU(ps_fam)
+
+df_fam_abund <- df_fam[ , colSums(df_fam) > 0]
+
+pca_prcomp <- prcomp(df_fam_abund, center = T)
+pca_prcomp_weights <- pca_prcomp$rotation # weights!
+fviz_eig(pca_prcomp)
+
+# Results for Variables
+res.var <- get_pca_var(pca_prcomp)
+contrib <- res.var$contrib
+# res.var$coord          # Coordinates
+# res.var$contrib        # Contributions to the PCs
+# res.var$cos2           # Quality of representation 
+
+ts_envfit <- envfit(pca_prcomp, metadata_ts_numeric, permutations = 999, na.rm = TRUE) 
+ts_envfit_scores <- scores(ts_envfit, "vectors")[ts_envfit$vectors$pvals<0.05, ]
+ts_envfit_coord <- as.data.frame(ts_envfit_scores) * ordiArrowMul(ts_envfit) * 30000
+
+p <- plot_ordination(physeq = ps_fam, ordination = pca_prcomp, color = "Sampling_Day") +
+  scale_color_viridis_c("Sampling Day") +
+  theme_bw() +
+  geom_segment(data = ts_envfit_coord, mapping = aes(x = 0, y = 0, xend = PC1, yend = PC2), size = 0.1, colour = "black", arrow = arrow(length = unit(0.05, "npc"))) +
+  geom_text(data = ts_envfit_coord, mapping = aes(x = PC1, y = PC2), label = row.names(ts_envfit_coord), colour = "grey30", fontface = "bold") +
+  coord_fixed()
+p
+
+ggsave(plot = p, filename = paste0(dir_phyloseq,"ord_pca_fam_envfit.png"), width = 20, height = 25, units = "cm", device = "png")
+
+```
+
+
+## PCA with ASVs
+```{r}
+df_asv <- veganifyOTU(ps_ts)
+df_asv_abund <- df_asv[ , colSums(df_asv) > 0]
+
+pca_prcomp <- prcomp(df_asv_abund, center = T)
+pca_prcomp_weights <- pca_prcomp$rotation # weights!
+fviz_eig(pca_prcomp)
+
+# Results for Variables
+res.var <- get_pca_var(pca_prcomp)
+contrib <- res.var$contrib
+# res.var$coord          # Coordinates
+# res.var$contrib        # Contributions to the PCs
+# res.var$cos2           # Quality of representation 
+
+ts_envfit <- envfit(pca_prcomp, metadata_ts_numeric, permutations = 999, na.rm = TRUE) 
+ts_envfit_scores <- scores(ts_envfit, "vectors")[ts_envfit$vectors$pvals<0.05, ]
+ts_envfit_coord <- as.data.frame(ts_envfit_scores) * ordiArrowMul(ts_envfit) * 30000
+
+p <- plot_ordination(physeq = ps_ts, ordination = pca_prcomp, color = "Sampling_Day") +
+  scale_color_viridis_c("Sampling Day") +
+  theme_bw() +
+  geom_segment(data = ts_envfit_coord, mapping = aes(x = 0, y = 0, xend = PC1, yend = PC2), size = 0.1, colour = "black", arrow = arrow(length = unit(0.05, "npc"))) +
+  geom_text(data = ts_envfit_coord, mapping = aes(x = PC1, y = PC2), label = row.names(ts_envfit_coord), colour = "grey30", fontface = "bold") +
+  coord_fixed()
+p
+```
+
+# CCA
+With metadata medians as benchmarks
+```{r}
+set.seed(42)
+
+ps_ts_norm <- ps_ts %>% 
+  ps_normalize_median("All")
+vegan_ts <- veganifyOTU(ps_ts_norm)
+
+#remove data with NA from both vegan_ts and metadata
+temp_NA <- which(is.na(metadata_ts_numsites$DIN.PO4) | is.na(metadata_ts_numsites$DIN.Si) | is.na(metadata_ts_numsites$Si.PO4))
+metadata_ts_numeric_noNA <- metadata_ts_numsites[-temp_NA, ]
+metadata_ts_numeric_noNA <- metadata_ts_numeric_noNA %>% 
+  select_if(is.numeric)
+vegan_ts_noNA <- vegan_ts[-temp_NA, 1:50]
+
+#CCA on ASVs
+cca_ts <- cca(vegan_ts_noNA ~ Silicate + Phosphate + DIN + DIN.Si + Salinity + DIN.PO4, data = metadata_ts_numeric_noNA)
+
+summary(cca_ts)
+anova.cca(cca_ts, by="term")
+anova.cca(cca_ts)
+
+jpeg(paste0(dir_supp,"CCA_ASVs.jpeg"), width = 1500, height = 1500, quality = 100, pointsize = 20)
+plot(cca_ts, type='n', scaling=2, xlim=c(-1.1, 1), ylim=c(-1,1))
+orditorp(cca_ts, display='sp', cex=1, scaling=2, col='blue')
+text(cca_ts, display='bp', col='red')
+dev.off()
+
+jpeg(paste0(dir_supp,"CCA_Both.jpeg"), width = 1500, height = 1500, quality = 100, pointsize = 20)
+plot(cca_ts, type = "n", scaling=2, xlim=c(-1.1, 1), ylim=c(-1.5,1))
+orditorp(cca_ts, display='wa', cex=1.1, scaling=1, col='blue')
+orditorp(cca_ts, display='sp', cex=0.9, scaling=2, col='darkgrey')
+text(cca_ts, display='bp', col='red')
+dev.off()
+
+
+```
+
+
+
+
+# more plots hmm
+## taxa
+```{r}
+#get the data we want
+asvtab_ts <- otu_table(ps_ts_norm)
+asvtab_ts <- as.data.frame(asvtab_ts@.Data)
+asvtab_ts <- as.data.frame(t(asvtab_ts))
+asvtab_ts <- cbind(metadata_ts$Date_dmy, metadata_ts$location, asvtab_ts)
+
+#sum & rename
+abund_ts <- data.frame(Date = asvtab_ts$`metadata_ts$Date_dmy`,
+                       Location = asvtab_ts$`metadata_ts$location`,
+                       HIMB11 = asvtab_ts$asv0003,
+                       `PCC-6307` = asvtab_ts$asv0004 + asvtab_ts$asv0007,
+                       Nitrosopumilus = asvtab_ts$asv0009 + asvtab_ts$asv0016,
+                       # Cryomorphaceae = asvtab_ts$asv0011 + asvtab_ts$asv0027 + asvtab_ts$asv0029, #taken out cos it's only a distraction
+                       Flavobacteriaceae = asvtab_ts$asv0013 + asvtab_ts$asv0015,
+                       Saprospiraceae = asvtab_ts$asv0037 + asvtab_ts$asv0055)
+
+#maake long table
+abund_ts_long <- abund_ts%>% 
+  gather(Taxa, Abundance, -c(Location, Date))
+
+p1 <- ggplot(abund_ts_long, aes(x = Date, y = Abundance, colour = Taxa, linetype = Taxa)) +
+  geom_line() +
+  facet_wrap( ~ Location) +
+  ghibli::scale_colour_ghibli_d("PonyoMedium") +
+  scale_linetype_manual(values=c("solid", "longdash", "solid", "longdash", "solid")) +
+  theme_bw() + theme(legend.position="right", axis.title = element_blank()) +
+  labs(tag = "B")
+
+print(p1)
+ggsave(paste0(dir_supp, "niche_taxa.jpg"), plot = p1, width = 28, height = 10, units = "cm", dpi = "print")
+ggsave(paste0(dir_supp, "niche_taxa.tiff"), plot = p1, width = 28, height = 10, units = "cm", dpi = "print")
+```
+
+## metadata
+```{r}
+neap_period <- data.frame(date_start = dmy(c("5/11/2020", "19/11/2020", "5/12/2020", "19/12/2020")),
+                          date_end = dmy(c("11/11/2020", "25/11/2020", "11/12/2020", "25/12/2020")))
+
+#==========Ratios==========
+#get the data we want
+metadata_ts_long <- metadata_ts %>% 
+  select(Site, Date_dmy, Salinity, DIN.PO4, DIN.Si, DIN, Phosphate, Silicate, Virus.ml)
+#Recalculate
+abund_ts_np <- data.frame(Date = metadata_ts$Date_dmy,
+                          Location = metadata_ts$location,
+                          Salinity = (metadata_ts$Salinity - 18)/10*100,
+                          DIN.PO4 = (metadata_ts$DIN.PO4)/50*100,
+                          Nitrogen = (metadata_ts$DIN)/100*100, 
+                          Phosphate = (metadata_ts$Phosphate)/4*100,
+                          Silicate = (metadata_ts$Silicate)/36.17*100,
+                          DIN.Si = (metadata_ts$DIN.Si)/20*100)
+abund_ts_np[is.na(abund_ts_np)] <- 1e3
+
+#maake long table
+abund_ts_long <- abund_ts_np %>% 
+  gather(Variable, Abundance, -c(Location, Date))
+abund_ts_long$Abundance[abund_ts_long$Abundance > 100] <- 100
+
+
+p2 <- ggplot(abund_ts_long, aes(x = Date, y = Abundance, colour = Variable, linetype = Variable)) +
+  geom_line() +
+  facet_wrap( ~ Location) +
+  scale_colour_viridis_d() +
+  scale_linetype_manual(values=c("solid", "longdash", "solid", "longdash", "solid", "longdash", "solid")) +
+  theme_bw() + theme(legend.position="right", axis.title = element_blank()) + ylim(c(0,100)) +
+  labs(tag = "A")
+
+print(p2)
+ggsave(paste0(dir_supp, "niche_met.jpg"), plot = p2, width = 20, height = 10, units = "cm", dpi = "print")
+ggsave(paste0(dir_supp, "niche_met.tiff"), plot = p2, width = 20, height = 10, units = "cm", dpi = "print")
+
+
+
+```
+
+```{r}
+p1 <- ggplotGrob(p1)
+p2 <- ggplotGrob(p2)
+p2$widths <- p1$widths
+g1 <- grid.arrange(p2, p1,
+             left = "Relative Abundances",
+             bottom = "Date")
+print(g1)
+ggsave(paste0(dir_supp, "niche_grid.jpg"), plot = g1, width = 28, height = 20, units = "cm", dpi = "print")
+ggsave(paste0(dir_supp, "niche_grid.tiff"), plot = g1, width = 28, height = 20, units = "cm", dpi = "print")
+
+```
+

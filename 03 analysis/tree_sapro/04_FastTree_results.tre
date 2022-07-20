@@ -1,0 +1,145 @@
+#NEXUS
+begin taxa;
+	dimensions ntax=43;
+	taxlabels
+	Outgroup1_E_coli_KS-12
+	amp_01_Aureispira_CCB-QB1_GCF_000724545
+	amp_02_Aureispira_maritima_NR_041537
+	amp_03_Flavilitoribacter_nigricans_GCF_002646595
+	amp_04_Haliscomenobacter_hydrossis_GCF_000212735
+	amp_05_Haliscomenobacter_hydrossis_GCF_000212735
+	amp_06_Lewinella_agarilytica_GCF_900110645
+	amp_07_Lewinella_aquimaris_GCF_014197245
+	amp_08_Lewinella_aurantiaca_GCF_008014675
+	amp_09_Lewinella_cohaerens_GCF_000379805
+	amp_10_Lewinella_cohaerens_GCF_000379805
+	amp_11_Lewinella_IMCC34183_GCF_003390915
+	amp_12_Lewinella_IMCC34191_GCF_003390935
+	amp_13_Lewinella_lacunae_GCF_014349155
+	amp_14_Lewinella_lacunae_GCF_014349155
+	amp_15_Lewinella_lacunae_GCF_014349155
+	amp_16_Lewinella_lacunae_GCF_014349155
+	amp_17_Lewinella_litorea_GCF_004803465
+	amp_18_Lewinella_marina_GCF_002631205
+	amp_19_Lewinella_persica_GCF_000373105
+	amp_20_Membranicola_marinus_NR_148805
+	amp_21_Phaeodactylibacter_luteus_GCF_007993045
+	amp_22_Phaeodactylibacter_xiamenensis_GCF_000759025
+	amp_23_Phaeodactylibacter_xiamenensis_GCF_000759025
+	amp_24_Phaeodactylibacter_xiamenensis_GCF_000759025
+	amp_25_Rubidimonas_crustatorum_NR_113282
+	amp_26_Saprospira_grandis_GCF_000250635
+	amp_27_Saprospira_grandis_GCF_000250635
+	amp_28_Saprospira_grandis_GCF_000250635
+	amp_29_Saprospira_grandis_GCF_000275825
+	amp_30_Saprospira_grandis_GCF_000275825
+	amp_31_Saprospira_grandis_GCF_000275825
+	amp_32_Saprospira_grandis_NR_104966
+	asv0037_Saprospiraceae
+	asv0055_Saprospiraceae
+	asv0138_Saprospiraceae
+	asv0169_Saprospiraceae
+	asv0193_Saprospiraceae_Lewinella
+	asv0209_Saprospiraceae_Lewinella
+	asv0211_Saprospiraceae
+	asv0219_Saprospiraceae
+	asv0230_Saprospiraceae_Phaeodactylibacter
+	asv0280_Saprospiraceae
+;
+end;
+
+begin trees;
+	tree tree_1 = [&R] (amp_21_Phaeodactylibacter_luteus_GCF_007993045:0.05539,amp_25_Rubidimonas_crustatorum_NR_113282:0.11315,((((amp_20_Membranicola_marinus_NR_148805:0.10297,(Outgroup1_E_coli_KS-12:0.24186,((amp_29_Saprospira_grandis_GCF_000275825:0.0,amp_30_Saprospira_grandis_GCF_000275825:0.0,amp_31_Saprospira_grandis_GCF_000275825:0.0):0.00231,(amp_28_Saprospira_grandis_GCF_000250635:6.4E-4,amp_32_Saprospira_grandis_NR_104966:0.00256)[&label=0.953]:6.5E-4)[&label=0.982]:0.06339)[&label=0.825]:0.02444)[&label=0.994]:0.06534,((asv0230_Saprospiraceae_Phaeodactylibacter:0.06998,(asv0193_Saprospiraceae_Lewinella:6.4E-4,asv0209_Saprospiraceae_Lewinella:0.00231)[&label=0.996]:0.04316)[&label=0.661]:0.02002,((asv0055_Saprospiraceae:6.4E-4,(asv0138_Saprospiraceae:6.0E-4,asv0280_Saprospiraceae:0.00252)[&label=0.954]:0.01004)[&label=1.0]:0.06132,(((amp_17_Lewinella_litorea_GCF_004803465:0.0122,(amp_07_Lewinella_aquimaris_GCF_014197245:0.01568,amp_11_Lewinella_IMCC34183_GCF_003390915:0.01565)[&label=0.896]:0.01362)[&label=1.0]:0.04419,((amp_13_Lewinella_lacunae_GCF_014349155:0.0,amp_15_Lewinella_lacunae_GCF_014349155:0.0):0.01737,(amp_06_Lewinella_agarilytica_GCF_900110645:0.01918,amp_08_Lewinella_aurantiaca_GCF_008014675:0.02855)[&label=0.05]:6.3E-4)[&label=0.685]:0.02036)[&label=0.995]:0.04505,(asv0037_Saprospiraceae:0.03355,(amp_02_Aureispira_maritima_NR_041537:0.08099,asv0211_Saprospiraceae:0.01964)[&label=0.962]:0.03092)[&label=0.776,!hilight={3,1.5597,#ffff96}]:0.01604)[&label=0.664]:0.01564)[&label=0.49]:0.01187)[&label=0.818]:0.01622)[&label=0.92]:0.03047,(asv0169_Saprospiraceae:6.4E-4,asv0219_Saprospiraceae:0.0025)[&label=1.0]:0.08561)[&label=0.78]:0.0084,(((((amp_01_Aureispira_CCB-QB1_GCF_000724545:0.04235,(amp_26_Saprospira_grandis_GCF_000250635:0.0,amp_27_Saprospira_grandis_GCF_000250635:0.0):0.11226)[&label=0.994]:0.05329,(((amp_14_Lewinella_lacunae_GCF_014349155:0.0,amp_16_Lewinella_lacunae_GCF_014349155:0.0):0.01149,amp_19_Lewinella_persica_GCF_000373105:0.00616)[&label=0.799]:0.02308,(amp_12_Lewinella_IMCC34191_GCF_003390935:0.02797,amp_18_Lewinella_marina_GCF_002631205:0.00798)[&label=0.988]:0.04286)[&label=0.769]:0.02865)[&label=0.887]:0.02278,(amp_09_Lewinella_cohaerens_GCF_000379805:0.0,amp_10_Lewinella_cohaerens_GCF_000379805:0.0):0.03621)[&label=0.337]:7.1E-4,(amp_03_Flavilitoribacter_nigricans_GCF_002646595:0.05613,(amp_04_Haliscomenobacter_hydrossis_GCF_000212735:0.05449,((amp_22_Phaeodactylibacter_xiamenensis_GCF_000759025:0.0,amp_23_Phaeodactylibacter_xiamenensis_GCF_000759025:0.0):0.00247,amp_24_Phaeodactylibacter_xiamenensis_GCF_000759025:6.4E-4)[&label=0.996]:0.05433)[&label=0.853]:0.03852)[&label=0.615]:0.02503)[&label=1.0]:1.50276,amp_05_Haliscomenobacter_hydrossis_GCF_000212735:0.03257)[&label=0.427]:7.1E-4)[&label=0.893]:0.02701);
+end;
+
+begin figtree;
+	set appearance.backgroundColorAttribute="Default";
+	set appearance.backgroundColour=#ffffff;
+	set appearance.branchColorAttribute="User selection";
+	set appearance.branchColorGradient=false;
+	set appearance.branchLineWidth=1.5;
+	set appearance.branchMinLineWidth=0.0;
+	set appearance.branchWidthAttribute="Fixed";
+	set appearance.foregroundColour=#000000;
+	set appearance.hilightingGradient=false;
+	set appearance.selectionColour=#2d3680;
+	set branchLabels.colorAttribute="User selection";
+	set branchLabels.displayAttribute="Branch times";
+	set branchLabels.fontName="sansserif";
+	set branchLabels.fontSize=8;
+	set branchLabels.fontStyle=0;
+	set branchLabels.isShown=false;
+	set branchLabels.significantDigits=4;
+	set layout.expansion=0;
+	set layout.layoutType="RECTILINEAR";
+	set layout.zoom=1000;
+	set legend.attribute="label";
+	set legend.fontSize=10.0;
+	set legend.isShown=false;
+	set legend.significantDigits=4;
+	set nodeBars.barWidth=4.0;
+	set nodeBars.displayAttribute=null;
+	set nodeBars.isShown=false;
+	set nodeLabels.colorAttribute="User selection";
+	set nodeLabels.displayAttribute="label";
+	set nodeLabels.fontName="sansserif";
+	set nodeLabels.fontSize=12;
+	set nodeLabels.fontStyle=0;
+	set nodeLabels.isShown=true;
+	set nodeLabels.significantDigits=2;
+	set nodeShapeExternal.colourAttribute="User selection";
+	set nodeShapeExternal.isShown=false;
+	set nodeShapeExternal.minSize=10.0;
+	set nodeShapeExternal.scaleType=Width;
+	set nodeShapeExternal.shapeType=Circle;
+	set nodeShapeExternal.size=4.0;
+	set nodeShapeExternal.sizeAttribute="Fixed";
+	set nodeShapeInternal.colourAttribute="User selection";
+	set nodeShapeInternal.isShown=false;
+	set nodeShapeInternal.minSize=10.0;
+	set nodeShapeInternal.scaleType=Width;
+	set nodeShapeInternal.shapeType=Circle;
+	set nodeShapeInternal.size=4.0;
+	set nodeShapeInternal.sizeAttribute="Fixed";
+	set polarLayout.alignTipLabels=false;
+	set polarLayout.angularRange=0;
+	set polarLayout.rootAngle=0;
+	set polarLayout.rootLength=100;
+	set polarLayout.showRoot=true;
+	set radialLayout.spread=0.0;
+	set rectilinearLayout.alignTipLabels=false;
+	set rectilinearLayout.curvature=0;
+	set rectilinearLayout.rootLength=122;
+	set scale.offsetAge=0.0;
+	set scale.rootAge=1.0;
+	set scale.scaleFactor=1.0;
+	set scale.scaleRoot=false;
+	set scaleAxis.automaticScale=true;
+	set scaleAxis.fontSize=8.0;
+	set scaleAxis.isShown=false;
+	set scaleAxis.lineWidth=1.0;
+	set scaleAxis.majorTicks=0.25;
+	set scaleAxis.minorTicks=0.05;
+	set scaleAxis.origin=0.0;
+	set scaleAxis.reverseAxis=false;
+	set scaleAxis.showGrid=true;
+	set scaleBar.automaticScale=true;
+	set scaleBar.fontSize=10.0;
+	set scaleBar.isShown=true;
+	set scaleBar.lineWidth=1.0;
+	set scaleBar.scaleRange=0.0;
+	set tipLabels.colorAttribute="User selection";
+	set tipLabels.displayAttribute="Names";
+	set tipLabels.fontName="sansserif";
+	set tipLabels.fontSize=20;
+	set tipLabels.fontStyle=0;
+	set tipLabels.isShown=true;
+	set tipLabels.significantDigits=4;
+	set trees.order=false;
+	set trees.orderType="increasing";
+	set trees.rooting=true;
+	set trees.rootingType="User Selection";
+	set trees.transform=false;
+	set trees.transformType="cladogram";
+end;
+

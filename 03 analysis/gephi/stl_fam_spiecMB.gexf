@@ -1,0 +1,192 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<gexf xmlns="http://www.gexf.net/1.3" xmlns:viz="http://www.gexf.net/1.3/viz" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.gexf.net/1.3 http://www.gexf.net/1.3/gexf.xsd" version="1.3">
+  <meta lastmodifieddate="2022-05-31">
+    <creator>NodosChile</creator>
+    <description>A GEXF file written in R with "rgexf"</description>
+    <keywords>GEXF, NodosChile, R, rgexf, Gephi</keywords>
+  </meta>
+  <graph mode="static" defaultedgetype="undirected">
+    <attributes class="edge" mode="static">
+      <attribute id="att1" title="WEIGHT" type="float"/>
+      <attribute id="att2" title="ABSWEIGHT" type="float"/>
+      <attribute id="att3" title="WIDTH" type="float"/>
+      <attribute id="att4" title="COLOR" type="string"/>
+    </attributes>
+    <nodes>
+      <node id="1" label="A4b">
+        <viz:color r="255" g="99" b="71" a="1"/>
+        <viz:position x="-84.2952697888588" y="18.7613821836121" z="0"/>
+        <viz:size value="10"/>
+      </node>
+      <node id="3" label="Actinomarinaceae">
+        <viz:color r="255" g="99" b="71" a="1"/>
+        <viz:position x="-98.0964104457312" y="-23.6916366437802" z="0"/>
+        <viz:size value="10"/>
+      </node>
+      <node id="8" label="Balneolaceae">
+        <viz:color r="255" g="99" b="71" a="1"/>
+        <viz:position x="100" y="69.7653188094805" z="0"/>
+        <viz:size value="10"/>
+      </node>
+      <node id="11" label="Burkholderiaceae">
+        <viz:color r="255" g="99" b="71" a="1"/>
+        <viz:position x="55.0697777588934" y="-100" z="0"/>
+        <viz:size value="10"/>
+      </node>
+      <node id="16" label="Cryomorphaceae">
+        <viz:color r="255" g="99" b="71" a="1"/>
+        <viz:position x="70.0791848569005" y="-22.5455875314797" z="0"/>
+        <viz:size value="10"/>
+      </node>
+      <node id="22" label="Halieaceae">
+        <viz:color r="255" g="99" b="71" a="1"/>
+        <viz:position x="18.6976118837112" y="100" z="0"/>
+        <viz:size value="10"/>
+      </node>
+      <node id="23" label="Ilumatobacteraceae">
+        <viz:color r="255" g="99" b="71" a="1"/>
+        <viz:position x="-62.4146715912048" y="-47.427704223469" z="0"/>
+        <viz:size value="10"/>
+      </node>
+      <node id="24" label="Litoricolaceae">
+        <viz:color r="255" g="99" b="71" a="1"/>
+        <viz:position x="-10.8413035247266" y="49.7478890909028" z="0"/>
+        <viz:size value="10"/>
+      </node>
+      <node id="28" label="Microbacteriaceae">
+        <viz:color r="255" g="99" b="71" a="1"/>
+        <viz:position x="-97.6579159891608" y="-90.1674207650457" z="0"/>
+        <viz:size value="10"/>
+      </node>
+      <node id="34" label="NS9_marine_group">
+        <viz:color r="255" g="99" b="71" a="1"/>
+        <viz:position x="-100" y="-69.4373816354281" z="0"/>
+        <viz:size value="10"/>
+      </node>
+      <node id="43" label="Puniceicoccaceae">
+        <viz:color r="255" g="99" b="71" a="1"/>
+        <viz:position x="14.016703369919" y="-88.7323757072782" z="0"/>
+        <viz:size value="10"/>
+      </node>
+      <node id="46" label="Rhodothermaceae">
+        <viz:color r="255" g="99" b="71" a="1"/>
+        <viz:position x="-31.801424133665" y="18.9364805044087" z="0"/>
+        <viz:size value="10"/>
+      </node>
+      <node id="49" label="Saprospiraceae">
+        <viz:color r="255" g="99" b="71" a="1"/>
+        <viz:position x="-47.1103595630872" y="13.6445194415787" z="0"/>
+        <viz:size value="10"/>
+      </node>
+      <node id="52" label="SAR86_clade_X">
+        <viz:color r="255" g="99" b="71" a="1"/>
+        <viz:position x="-85.2812569957559" y="58.633418109689" z="0"/>
+        <viz:size value="10"/>
+      </node>
+      <node id="54" label="UBA10353_marine_group_X">
+        <viz:color r="255" g="99" b="71" a="1"/>
+        <viz:position x="86.772898474678" y="39.3582792026108" z="0"/>
+        <viz:size value="10"/>
+      </node>
+    </nodes>
+    <edges>
+      <edge id="0" source="1" target="49" weight="1">
+        <attvalues>
+          <attvalue for="att1" value="0.089942635542873"/>
+          <attvalue for="att2" value="0.089942635542873"/>
+          <attvalue for="att3" value="1.42170614282787"/>
+          <attvalue for="att4" value="blue"/>
+        </attvalues>
+      </edge>
+      <edge id="1" source="1" target="52" weight="1">
+        <attvalues>
+          <attvalue for="att1" value="-0.00264505321825148"/>
+          <attvalue for="att2" value="0.00264505321825148"/>
+          <attvalue for="att3" value="1.01040122964364"/>
+          <attvalue for="att4" value="red"/>
+        </attvalues>
+      </edge>
+      <edge id="2" source="3" target="46" weight="1">
+        <attvalues>
+          <attvalue for="att1" value="0.114082602507407"/>
+          <attvalue for="att2" value="0.114082602507407"/>
+          <attvalue for="att3" value="1.56251041081542"/>
+          <attvalue for="att4" value="blue"/>
+        </attvalues>
+      </edge>
+      <edge id="3" source="3" target="52" weight="1">
+        <attvalues>
+          <attvalue for="att1" value="0.0127386725510941"/>
+          <attvalue for="att2" value="0.0127386725510941"/>
+          <attvalue for="att3" value="1.05109657891821"/>
+          <attvalue for="att4" value="blue"/>
+        </attvalues>
+      </edge>
+      <edge id="4" source="3" target="54" weight="1">
+        <attvalues>
+          <attvalue for="att1" value="0.0158037691953147"/>
+          <attvalue for="att2" value="0.0158037691953147"/>
+          <attvalue for="att3" value="1.06377585769301"/>
+          <attvalue for="att4" value="blue"/>
+        </attvalues>
+      </edge>
+      <edge id="5" source="8" target="16" weight="1">
+        <attvalues>
+          <attvalue for="att1" value="0.0911641744846444"/>
+          <attvalue for="att2" value="0.0911641744846444"/>
+          <attvalue for="att3" value="1.42851629237269"/>
+          <attvalue for="att4" value="blue"/>
+        </attvalues>
+      </edge>
+      <edge id="6" source="8" target="22" weight="1">
+        <attvalues>
+          <attvalue for="att1" value="0.183902752615423"/>
+          <attvalue for="att2" value="0.183902752615423"/>
+          <attvalue for="att3" value="2.05326621120151"/>
+          <attvalue for="att4" value="blue"/>
+        </attvalues>
+      </edge>
+      <edge id="7" source="8" target="49" weight="1">
+        <attvalues>
+          <attvalue for="att1" value="0.0497150764722201"/>
+          <attvalue for="att2" value="0.0497150764722201"/>
+          <attvalue for="att3" value="1.21468711228583"/>
+          <attvalue for="att4" value="blue"/>
+        </attvalues>
+      </edge>
+      <edge id="8" source="11" target="24" weight="1">
+        <attvalues>
+          <attvalue for="att1" value="0.107103169362307"/>
+          <attvalue for="att2" value="0.107103169362307"/>
+          <attvalue for="att3" value="1.52042524548866"/>
+          <attvalue for="att4" value="blue"/>
+        </attvalues>
+      </edge>
+      <edge id="9" source="22" target="49" weight="1">
+        <attvalues>
+          <attvalue for="att1" value="0.0406951616927275"/>
+          <attvalue for="att2" value="0.0406951616927275"/>
+          <attvalue for="att3" value="1.1725729170093"/>
+          <attvalue for="att4" value="blue"/>
+        </attvalues>
+      </edge>
+      <edge id="10" source="23" target="34" weight="1">
+        <attvalues>
+          <attvalue for="att1" value="0.0121973439112134"/>
+          <attvalue for="att2" value="0.0121973439112134"/>
+          <attvalue for="att3" value="1.04887303732354"/>
+          <attvalue for="att4" value="blue"/>
+        </attvalues>
+      </edge>
+      <edge id="11" source="28" target="43" weight="1">
+        <attvalues>
+          <attvalue for="att1" value="0.0147712504431153"/>
+          <attvalue for="att2" value="0.0147712504431153"/>
+          <attvalue for="att3" value="1.05948768108097"/>
+          <attvalue for="att4" value="blue"/>
+        </attvalues>
+      </edge>
+    </edges>
+  </graph>
+</gexf>
+

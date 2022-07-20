@@ -1,0 +1,357 @@
+---
+title: "Phyloseq exploration"
+output: html_notebook
+---
+# Introduction
+Author: Winona Wijaya
+Last updated: 20 Jul 2022
+
+Done:
+- Average v1 & v2 reads
+- Make phyloseq object
+- Beta diversity
+- Alpha diversity
+- Sample Succession
+- Taxa Barpots
+- Checking Past HAB species
+
+
+
+# Load Everything
+## Load Libraries
+```{r, message = FALSE}
+library("tidyverse")
+library("Biostrings")
+library("ggforce")
+
+library("dada2")
+library("phyloseq")
+library("vegan")
+
+library("viridis")
+source("~/OneDrive - Nanyang Technological University/common bioinformatics/extra_functions copy.R")
+options(stringsAsFactors = FALSE)
+
+dir_phyloseq <- "./phyloseq/"
+dir_dada2 <- "./dada2/"
+```
+
+# Average v1 & v2 samples
+```{r}
+seqtab_final_noNAs <- readRDS("17_seqtab_final_noNAs.RDS")
+metadata <- data.frame(read.csv("metadata_0525.csv"), stringsAsFactors = FALSE, row.names = NULL)
+
+temp_toavg <- seqtab_final_noNAs %>% 
+  select(SBW01:WDL30v2)
+temp_toavg <- temp_toavg[ , colSums(temp_toavg) > 1e4]
+
+seqtab_avg <- seqtab_final_noNAs %>% 
+  select(Kingdom:sequence)
+
+for (i in 1:nrow(metadata)){
+  temp_sample <- metadata$sample_label[i]
+  if(sum(grepl(temp_sample, names(temp_toavg))) > 1){
+    temp <- temp_toavg[ , grepl(temp_sample, names(temp_toavg))] #get technical replicates
+    temp[ , 1] <- temp[ , 1]/sum(temp[1])*(min(sum(temp[1]), sum(temp[2]))) #normalise
+    temp[ , 2] <- temp[ , 2]/sum(temp[2])*(min(sum(temp[1]), sum(temp[2])))
+    temp_append <- data.frame(test = apply(temp, 1, mean)) #average
+    colnames(temp_append) <- temp_sample
+  }else{
+    temp_append <- data.frame(test = temp_toavg[ , grepl(temp_sample, names(temp_toavg))])
+    colnames(temp_append) <- temp_sample
+  }
+  seqtab_avg <- seqtab_avg %>% #append
+    cbind(temp_append)
+}
+
+saveRDS(seqtab_avg, "17_seqtab_final_averaged.RDS")
+```
+
+
+
+# Phyloseq Object
+```{r}
+#metadata
+metadata <- data.frame(read.csv("metadata_0525.csv"), stringsAsFactors = FALSE, row.names = NULL)
+rownames(metadata) <- metadata$sample_label
+metadata$Date_dmy <- lubridate::dmy(metadata$Date_dmy)
+metadata$DIN.PO4 <- as.numeric(metadata$DIN.PO4)
+metadata$DIN.Si <- as.numeric(metadata$DIN.Si)
+saveRDS(metadata, "18_metadata.RDS")
+
+
+# Seqtab Final No NAs
+OTU <- seqtab_avg %>%
+  column_to_rownames("ASVNumber") %>%
+  select_if(is.numeric) %>% 
+  select(-contains("_boot")) %>%
+  as.matrix() %>%
+  otu_table(taxa_are_rows = TRUE)
+
+TAX <- seqtab_avg %>%
+  column_to_rownames("ASVNumber") %>%
+  select(Kingdom:Species) %>% 
+  as.matrix() %>% 
+  tax_table()
+
+ps_dada2 <- phyloseq(OTU, sample_data(metadata), TAX)
+saveRDS(ps_dada2, "18_phyloseq_all.RDS")
+
+# Seqtab Confident
+seqtab_final_phy80 <- seqtab_avg %>% 
+  filter(Phylum_boot >= 80)
+
+OTU <- seqtab_final_phy80 %>%
+  column_to_rownames("ASVNumber") %>%
+  select_if(is.numeric) %>% 
+  select(-contains("_boot")) %>%
+  as.matrix() %>%
+  otu_table(taxa_are_rows = TRUE)
+
+TAX <- seqtab_final_phy80 %>%
+  column_to_rownames("ASVNumber") %>%
+  select(Kingdom:Species) %>% 
+  as.matrix() %>% 
+  tax_table()
+
+ps_dada2 <- phyloseq(OTU, sample_data(metadata), TAX)
+saveRDS(ps_dada2, "18_phyloseq_cfd.RDS")
+
+```
+
+```{r}
+y <- DT::datatable(seqtab_final_noNAs)
+DT::saveWidget(y, "seqtab_final_noNAs.html")
+
+y <- DT::datatable(seqtab_final_phy80)
+DT::saveWidget(y, "seqtab_final_phy80.html")
+```
+
+
+# Load the previously made file
+```{r}
+# Run for lazy loading
+seqtab_avg <- readRDS("./17_seqtab_final_averaged.RDS")
+ps_ts <- readRDS("./19_phyloseq_ts.rds")
+ps_cfd <- readRDS("./19_phyloseq_cfd.rds")
+```
+
+
+### Subset samples
+```{r}
+# get time series data only
+ps_ts <- subset_samples(ps_ts, Sampling_Day != 0)
+ps_ts <- prune_samples(sample_sums(ps_ts)>=10000, ps_ts) #remove samples with low read counts
+ps_ts <- prune_taxa(taxa_sums(ps_ts)>=10, ps_ts)
+ps_ts
+saveRDS(ps_ts, "./19_phyloseq_ts.RDS")
+
+ps_cfd <- subset_samples(ps_cfd, Sampling_Day != 0)
+ps_cfd <- prune_samples(sample_sums(ps_cfd)>=10000, ps_cfd) #remove samples with low read counts
+ps_cfd <- prune_taxa(taxa_sums(ps_cfd)>=10, ps_cfd)
+ps_cfd
+saveRDS(ps_cfd, "./19_phyloseq_cfd.RDS")
+```
+
+
+
+# See sample beta diversity
+```{r}
+set.seed(1)
+ordinationz <- ordinate(ps_ts, method = "NMDS", distance = "bray")
+
+p <- plot_ordination(physeq = ps_ts, ordination = ordinationz, color = "Site") +
+  stat_ellipse(type="norm", linetype = 2) +
+  scale_color_viridis_d() +
+  theme_bw() +
+  coord_fixed() +
+  labs(title = "NMDS by Site")
+print(p)
+ggsave(plot = p, filename = str_c(dir_phyloseq,"ord_samples_site.png"), width = 30, height = 20, units = "cm", device = "png")
+
+p <- plot_ordination(physeq = ps_ts, ordination = ordinationz, color = "Country") +
+  stat_ellipse(type="norm", linetype = 2) +
+  scale_color_viridis_d() +
+  theme_bw() +
+  coord_fixed() +
+  labs(title = "NMDS by Country")
+print(p)
+ggsave(plot = p, filename = str_c(dir_phyloseq,"ord_samples_country.png"), width = 30, height = 20, units = "cm", device = "png")
+
+p <- plot_ordination(physeq = ps_ts, ordination = ordinationz, color = "EW") +
+  stat_ellipse(type="norm", linetype = 2) +
+  scale_color_viridis_d("Location") +
+  coord_fixed() +
+  theme_bw() +
+  labs(title = "NMDS by Location")
+print(p)
+ggsave(plot = p, filename = str_c(dir_phyloseq,"ord_samples_ew.png"), width = 30, height = 20, units = "cm", device = "png")
+
+```
+
+
+
+# See alpha diversity
+```{r}
+plot_richness(ps_ts, x = "Site", measures = c("Shannon", "Simpson")) +
+  geom_boxplot()
+ggsave(str_c(dir_phyloseq,"richness_Site.jpg"), width = 20, height = 15, units = "cm")
+ggsave("./supplementary/richness_Site.tiff", width = 20, height = 15, units = "cm")
+
+plot_richness(ps_ts, x = "Country", measures = c("Shannon", "Simpson")) +
+  geom_boxplot()
+ggsave(str_c(dir_phyloseq,"richness_country.jpg"), width = 20, height = 15, units = "cm")
+
+plot_richness(ps_ts, x = "EW", measures = c("Shannon", "Simpson")) +
+  geom_boxplot()
+ggsave(str_c(dir_phyloseq,"richness_ew.jpg"), width = 20, height = 15, units = "cm")
+```
+
+
+# Sample Succession
+get centroids & circles
+```{r}
+set.seed(1)
+ordinationz <- ordinate(ps_ts,method = "NMDS", distance = "bray")
+
+# Get points
+points_ts <- as.data.frame(ordinationz[["points"]], stringsAsFactors = F) %>% 
+  rownames_to_column(var = "sample_name") %>% 
+  mutate(site = substring(sample_name, 1, 3),
+         day = substring(sample_name, 4, 5),
+         to_centre = numeric(length = 1))
+points_ts$day <- as.numeric(points_ts$day)
+
+# Make centroids_ts
+centroids_ts <- data.frame(matrix(ncol = 4, nrow = length(unique(points_ts$day))))
+colnames(centroids_ts) <- c("Sampling_Day", "MDS1", "MDS2", "avg_distance")
+
+pythagorean <- function(a, b){
+  return(sqrt(a^2 + b^2))
+}
+
+for(i in 1:nrow(centroids_ts)){
+  index <- which(points_ts$day == i)
+  mds1_temp <- mean(points_ts$MDS1[index])
+  mds2_temp <- mean(points_ts$MDS2[index])
+  dist_temp <- pythagorean(points_ts$MDS1[index]-mds1_temp, points_ts$MDS2[index]-mds2_temp)
+  avgd_temp <- mean(dist_temp)
+  
+  # add into centroids_ts
+  centroids_ts$Sampling_Day[i] <- i
+  centroids_ts$MDS1[i] <- mds1_temp
+  centroids_ts$MDS2[i] <- mds2_temp
+  centroids_ts$avg_distance[i] <- avgd_temp
+  
+  #add into points_ts
+  points_ts$to_centre[index] <- dist_temp
+}
+centroids_ts<- centroids_ts %>% 
+  mutate(day_chr = as.character(Sampling_Day))
+
+saveRDS(centroids_ts, "./20_centroids.RDS")
+saveRDS(points_ts, "./20_points_ts.RDS")
+```
+plot
+```{r}
+p <- plot_ordination(physeq = ps_ts, ordination = ordinationz, color = "Sampling_Day") +
+  scale_color_viridis_c("Sampling Day") +
+  geom_path(data = centroids_ts, mapping = aes(x = MDS1, y = MDS2), color = "red") +
+  geom_label(data = centroids_ts, mapping = aes(x = MDS1, y = MDS2, label = day_chr), fill = "grey", color = "red") +
+  theme_bw() +
+  coord_fixed()
+
+p1 <- p +
+  labs(title = "Sample succession path")
+print(p1)
+ggsave(plot = p1, filename = str_c(dir_phyloseq,"ord_succession_path.png"), width = 30, height = 20, units = "cm", device = "png")
+ggsave(plot = p1, filename = "./main/ord_succession_path.tiff", width = 30, height = 20, units = "cm")
+
+p2 <- p +
+  geom_circle(data = centroids_ts,
+              mapping = aes(x0 = MDS1, y0 = MDS2, r = avg_distance, color = Sampling_Day),
+              inherit.aes = F, alpha = 0.5) +
+  labs(title = "Sample succession with sample spread")
+print(p2)
+ggsave(plot = p2, filename = str_c(dir_phyloseq,"ord_succession_spread.png"), width = 30, height = 20, units = "cm", device = "png")
+ggsave(plot = p1, filename = "./supplementary/ord_succession_spread.tiff", width = 30, height = 20, units = "cm")
+```
+
+
+
+# Bar Plots
+### Divide ps objects
+```{r}
+ps_cfd_ts_abund <- ps_cfd %>% 
+  ps_normalize_median("All") %>% 
+  ps_abundant(contrib_min = 0.01, title = "Timeseries (Abundant Taxa)")
+
+# Divide according to taxa
+ps_cfd_ts_bac <- subset_taxa(ps_cfd_ts_abund, Kingdom == "Bacteria")
+ps_cfd_ts_euk <- subset_taxa(ps_cfd_ts_abund, Kingdom == "Eukaryota")
+ps_cfd_ts_arc <- subset_taxa(ps_cfd_ts_abund, Kingdom == "Archaea")
+
+print("Eukaryota")
+ps_cfd_ts_euk
+
+print("Bacteria")
+ps_cfd_ts_bac
+
+print("Archaea")
+ps_cfd_ts_arc
+
+ps_cfd_ts_bac_abund <- ps_cfd_ts_bac %>% 
+  ps_normalize_median("Bacteria")
+
+ps_cfd_ts_euk_abund <- ps_cfd_ts_euk %>% 
+  ps_normalize_median("Eukaryotes")
+
+ps_cfd_ts_arc_abund <- ps_cfd_ts_arc %>% 
+  ps_normalize_median("Archaea")
+
+```
+
+### Plot barplots
+```{r}
+p <- plot_bar(ps_cfd_ts_abund, fill = "Phylum", title = "All (Abundant taxa)") +
+  facet_wrap(~Site, scales = "free") +
+  scale_fill_viridis_d()
+print(p)
+ggsave(plot = p, filename = str_c(dir_phyloseq,"bar_ts_abund_site.png"), width = 40, height = 40, units = "cm", device = "png")
+
+p <- plot_bar(ps_cfd_ts_bac_abund, fill = "Phylum", title = "Bacteria (Abundant taxa)") +
+  facet_wrap(~Site, scales = "free") +
+  scale_fill_viridis_d()
+print(p)
+ggsave(plot = p, filename = str_c(dir_phyloseq,"bar_ts_bac_abund_site.png"), width = 40, height = 40, units = "cm", device = "png")
+
+p <- plot_bar(ps_cfd_ts_euk_abund, fill = "Phylum", title = "Eukaryotes (Abundant taxa)") +
+  facet_wrap(~Site, scales = "free") +
+  scale_fill_viridis_d()
+print(p)
+ggsave(plot = p, filename = str_c(dir_phyloseq,"bar_ts_euk_abund_site.png"), width = 40, height = 40, units = "cm", device = "png")
+
+p <- plot_bar(ps_cfd_ts_arc_abund, fill = "Phylum", title = "Archaea (Abundant taxa)") +
+  facet_wrap(~Site, scales = "free") +
+  scale_fill_viridis_d()
+print(p)
+ggsave(plot = p, filename = str_c(dir_phyloseq,"bar_ts_arc_abund_site.png"), width = 40, height = 40, units = "cm", device = "png")
+```
+
+
+# Past HAB species
+```{r}
+ps_ts <- readRDS("./19_phyloseq_ts.RDS")
+
+ps_ts_hab <- ps_ts %>%
+  subset_taxa(Genus == "Chaetoceros" | Family == "Kareniaceae" | Genus == "Thalassiosira") %>% #get HAB taxa
+  tax_glom(taxrank = "Kingdom") #collapse all
+paste0("Mean HAB reads per sample: ", mean(ps_ts_hab@otu_table))
+
+ps_ts_hab <- prune_samples(sample_sums(ps_ts_hab) > 0, ps_ts_hab)
+paste0("Mean HAB reads in samples with HAB species: ", mean(ps_ts_hab@otu_table))
+
+paste0("Number of samples with HAB reads: ", sum(sample_sums(ps_ts_hab) > 0))
+
+```
+

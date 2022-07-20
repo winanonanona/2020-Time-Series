@@ -1,0 +1,231 @@
+---
+title: "Metadata exploration"
+output: html_notebook
+---
+# Introduction
+Author: Winona Wijaya
+Last updated: 20 Jul 2022
+
+Done:
+- Exploration on Metadata
+- Making various graphs
+
+# Load Everything
+## Load Libraries
+```{r, message = FALSE, results = "hide", echo = F}
+library("tidyverse")
+library("ggpubr")
+library("gridExtra")
+library("Biostrings")
+library("lubridate")
+
+library("phyloseq")
+library("vegan")
+library("corrplot")
+
+library("viridis")
+source("~/OneDrive - Nanyang Technological University/common bioinformatics/extra_functions copy.R")
+options(stringsAsFactors = FALSE)
+
+dir_phyloseq <- "./phyloseq/"
+dir_dada2 <- "./dada2/"
+dir_met <- "./met_explore/"
+dir_corr <- "./corr/"
+
+```
+
+## Load the previously made file
+```{r}
+# Run for lazy loading
+points_ts <- readRDS("./20_points_ts.RDS")
+ps_ts <- readRDS("./19_phyloseq_ts.RDS")
+metadata_ts <- readRDS("./18_metadata.RDS")
+#metadata_ts <- readRDS("./19_metadata_ts.RDS") #if done before
+
+asvtab_ts <- otu_table(ps_ts)
+asvtab_ts <- as.data.frame(asvtab_ts@.Data)
+```
+
+### Add simpson/shannon index to metadata
+```{r}
+ts_shannon <- as.data.frame(diversity(t(asvtab_ts), index = "shannon")) %>% 
+  rownames_to_column("sample_label")
+colnames(ts_shannon)[2] <- "shannon"
+
+ts_simpson <- as.data.frame(diversity(t(asvtab_ts), index = "simpson")) %>% 
+  rownames_to_column("sample_label")
+colnames(ts_simpson)[2] <- "simpson"
+
+metadata_ts <- metadata_ts %>% 
+  left_join(ts_shannon) %>% 
+  left_join(ts_simpson)
+
+saveRDS(metadata_ts, "19_metadata_ts.RDS")
+```
+
+# Metadata Exploration
+## Nutrient Data
+### Time series of nutrients
+Reorder using variables using factors so it appears in the facet wrap nicer https://stackoverflow.com/questions/15116081/controlling-order-of-facet-grid-facet-wrap-in-ggplot2
+```{r}
+metadata_ts_long <- metadata_ts %>% 
+  select(Site, Date_dmy, Salinity, Rain_2, Chlorophyll_Filtered, DIN, Phosphate, Silicate, Virus.ml) %>% 
+  gather(variable, value, -c(Site, Date_dmy))
+
+neap_period <- data.frame(date_start = dmy(c("5/11/2020", "19/11/2020", "5/12/2020", "19/12/2020")),
+                          date_end = dmy(c("11/11/2020", "25/11/2020", "11/12/2020", "25/12/2020")))
+
+labs_metadata <- c("Chlorophyll Filtered (ug/L)", "Dissolved Inorganic Nitrogen (umol/L)", "Phosphate (umol/L)", "Total 2-Day Rain (mm)", "Salinity (psu)", "Silicate (umol/L)", "Virus particles per mL")
+names(labs_metadata) <- c("Chlorophyll_Filtered", "DIN", "Phosphate", "Rain_2", "Salinity", "Silicate", "Virus.ml")
+
+p1 <- ggplot(metadata_ts_long, mapping = aes(x = Date_dmy, y = value, colour = Site)) +
+  geom_rect(data = neap_period, aes(xmin = date_start, xmax = date_end, ymin = -Inf, ymax = Inf), fill = "#04bbc3", alpha = 0.3, inherit.aes = F) +
+  geom_line() +
+  geom_point() +
+  scale_colour_viridis_d() +
+  facet_wrap(~ variable, ncol = 1, scales = "free_y", labeller = labeller(variable = labs_metadata)) +
+  labs(x = "Date") +
+  theme_bw() + theme (legend.position="bottom")
+print(p1)
+
+ggsave(paste0(dir_met, "nutrients_ts.jpg"), plot = p1, width = 20, height = 27, units = "cm", dpi = "print")
+ggsave(paste0(dir_main, "nutrients_ts.tiff"), plot = p1, width = 20, height = 27, units = "cm", dpi = "print")
+```
+
+
+### Combined env params
+
+#### per site
+Box plot whiskers to see the variation in each site
+```{r}
+to_compare <- list( c("SBW", "SNB"), c("SBW", "STL"), c("SBW", "WDL"), c("SNB", "STL"), c("SNB", "WDL"), c("STL", "WDL"))
+
+metadata_ts_long_2 <- metadata_ts_long %>% 
+  filter(variable != "Rain_2")
+labs_metadata <- c("Chlorophyll Filtered (ug/L)", "Dissolved Inorganic Nitrogen (umol/L)", "Phosphate (umol/L)", "Salinity (psu)", "Silicate (umol/L)", "Virus particles per mL")
+names(labs_metadata) <- c("Chlorophyll_Filtered", "DIN", "Phosphate", "Salinity", "Silicate", "Virus.ml")
+
+p1 <- ggplot(metadata_ts_long_2, mapping = aes(x = Site, y = value, fill = Site)) +
+  geom_boxplot() +
+  geom_point() +
+  scale_fill_viridis_d() +
+  stat_compare_means() +
+  stat_compare_means(comparisons = to_compare) +
+  facet_wrap(~ variable, ncol = 3, scales = "free_y", labeller = labeller(variable = labs_metadata)) +
+  theme_bw() + theme(legend.position="bottom")
+print(p1)
+
+ggsave(paste0(dir_met, "nutrients_bp.jpg"), plot = p1, width = 20, height = 27, units = "cm", dpi = "print")
+ggsave(paste0(dir_supp, "nutrients_bp.tiff"), plot = p1, width = 20, height = 27, units = "cm", dpi = "print")
+```
+
+
+
+
+
+### Redfield ratios
+```{r}
+p1 <- ggplot(metadata_ts, mapping = aes(Phosphate, DIN)) +
+  geom_point() +
+  geom_abline(aes(intercept = 0, slope = 16), color = "grey", linetype = 5) +
+  #ylim(c(0,35)) + xlim(c(0,4)) +
+  geom_smooth(method='lm') +
+  stat_cor() +
+  stat_regline_equation(label.y = 94) +
+  labs(title = "DIN:Phosphate")
+# p1
+
+p2 <- ggplot(metadata_ts, mapping = aes(Silicate, DIN)) +
+  geom_point() +
+  geom_abline(aes(intercept = 0, slope = 1), color = "grey", linetype = 5) +
+  #ylim(c(0,35)) +
+  geom_smooth(method='lm') +
+  stat_cor() +
+  stat_regline_equation(label.y = 94) +
+  labs(title = "DIN:Silicates")
+# p2
+
+p3 <- ggplot(metadata_ts,mapping = aes(Phosphate,Silicate)) +
+  geom_point() +
+  geom_abline(aes(intercept = 0, slope = 16), color = "grey", linetype = 5) +
+  #ylim(c(0,35)) + xlim(c(0,4)) +
+  geom_smooth(method='lm') +
+  stat_cor() +
+  stat_regline_equation(label.y = 31) +
+  labs(title = "Phosphate:Silicates")
+# p3
+
+p_all <- grid.arrange(p1, p2, p3, ncol = 2, nrow = 2)
+print(p_all)
+ggsave(paste0(dir_met, "ratio_regression.jpg"), plot = p_all, width = 25, height = 17, units = "cm", dpi = "retina")
+```
+
+
+# Virus bacteria plot
+```{r}
+fcm_counts <- metadata_ts %>% 
+  select(Date_dmy, Virus.ml, Bacteria.ml, Site)
+
+labs_metadata <- c("Sembawang", "Senibong", "Stulang", "Woodlands")
+names(labs_metadata) <- c("SBW", "SNB", "STL", "WDL")
+
+coeff <- 10
+ggplot(fcm_counts) +
+  geom_line(aes(x = Date_dmy, y = Virus.ml, colour = Site, linetype = "Virus")) +
+  geom_line(aes(x = Date_dmy, y = Bacteria.ml * coeff, colour = Site, linetype = "Bacteria")) +
+  scale_linetype_manual("Counts", values = c("Virus" = 2, "Bacteria"=1)) +
+  scale_y_continuous(
+    name = "Virus counts per ml", # Features of the first axis
+    sec.axis = sec_axis(~./coeff, name = "Bacterial counts per ml") # Add a second axis and specify its features
+  ) +
+  labs(x = "Date") +
+  facet_wrap(~ Site, ncol = 1, labeller = labeller(Site = labs_metadata)) +
+  theme(legend.position="bottom")
+
+ggsave("virus_bact.jpg", width = 16.5, height = 15, units = "cm", dpi = "retina")
+```
+
+
+# Tides vs BC distance
+```{r}
+metadata_points <- metadata_ts %>% 
+  left_join(centroids_ts, by = "Sampling_Day") %>% 
+  left_join(points_ts, by = c("sample_label" = "sample_name")) %>% 
+  filter(sample_label != "STL28")
+
+metpointshort <- metadata_points[1:30, ]
+
+metadata_points_east <- metadata_points %>% 
+  filter(EW == "West") %>% 
+  arrange(to_centre)
+bpdistn <- metadata_points_east [c(1:15, 44:58), c("day_chr", "neap_days", "to_centre")] %>% 
+  mutate(dist_cat = c(rep("Low Distance", 15), rep("High Distance", 15)))
+distwest <- ggplot(bpdistn, aes(x = dist_cat, y = neap_days, fill = dist_cat)) +
+  geom_boxplot() +
+  geom_point() +
+  ghibli::scale_fill_ghibli_d("LaputaMedium", direction = -1) +
+  stat_compare_means() +
+  labs(title = "West Samples",
+       x = "Bray-Curtis distance",
+       y = "Days from nearest neap tide") +
+  theme(legend.position="none")
+
+metadata_points_east <- metadata_points %>% 
+  filter(EW == "East") %>% 
+  arrange(to_centre)
+bpdistn <- metadata_points_east [c(1:15, 45:59), c("day_chr", "neap_days", "to_centre")] %>% 
+  mutate(dist_cat = c(rep("Low Distance", 15), rep("High Distance", 15)))
+disteast <- ggplot(bpdistn, aes(x = dist_cat, y = neap_days, fill = dist_cat)) +
+  geom_boxplot() +
+  geom_point() +
+  ghibli::scale_fill_ghibli_d("LaputaMedium", direction = -1) +
+  stat_compare_means() +
+  labs(title = "East Samples",
+       x = "Bray-Curtis distance",
+       y = "Days from nearest neap tide") +
+  theme(legend.position="none")
+
+p4 <- grid.arrange(distwest, disteast, ncol=1)
+p4
+ggsave(plot = p4, filename = "neap_distance_eastwest.jpg", width = 15, height = 20, units = "cm", dpi = "retina")
+```

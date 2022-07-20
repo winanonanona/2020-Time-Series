@@ -1,0 +1,85 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+# Introduction
+Author: Winona Wijaya
+Last updated: 20 Jul 2022
+
+Done:
+- Collapse taxa to Family level
+- Prepare data for SpiecEasi
+- Import to igraph to make nice .gexf files
+- Export in .gexf for GEPHI
+
+
+
+# Load Libraries
+```{r, message = F}
+library(tidyverse)
+library(phyloseq)
+library(SpiecEasi)
+library(igraph)
+source("~/OneDrive - Nanyang Technological University/common bioinformatics/extra_functions copy.R")
+
+# load in the following function
+'%!in%' <- function(x,y) {
+  !('%in%'(x,y))
+}
+
+ps_ts <- readRDS("./19_phyloseq_ts.RDS")
+```
+
+# do for families
+```{r}
+ps_sbw_fam <- ps_ts %>%
+  subset_samples(Site == "SBW") %>% #select only SBW samples
+  tax_glom(taxrank = "Family") #collapse everything to family level
+
+ps_wdl_fam <- ps_ts %>%
+  subset_samples(Site == "WDL") %>% #select only WDL samples
+  tax_glom(taxrank = "Family") #collapse everything to family level
+
+ps_stl_fam <- ps_ts %>%
+  subset_samples(Site == "STL") %>% #select only STL samples
+  tax_glom(taxrank = "Family") #collapse everything to family level
+
+ps_snb_fam <- ps_ts %>%
+  subset_samples(Site == "SNB") %>% #select only SNB samples
+  tax_glom(taxrank = "Family") #collapse everything to family level
+
+ps_ts_fam <- ps_ts %>%
+  tax_glom(taxrank = "Family") #collapse everything to family level
+```
+
+# spieceasi on families
+```{r}
+loopies_ps <- list(ps_sbw_fam, ps_wdl_fam, ps_stl_fam, ps_snb_fam, ps_ts_fam)
+loopies_names <- c("sbw_fam_spiecMB", "wdl_fam_spiecMB", "stl_fam_spiecMB", "snb_fam_spiecMB", "ps_ts_fam")
+
+for (i in 1:length(loopies_ps)){
+  try1 <- loopies_ps[[i]]
+  
+  try2 <- ps_to_SparCCinput(try1)
+  
+  try3 <- SpiecEasi_inout(try2, repetitions = 999, threads = 3)
+  saveRDS(try3, file = paste0("./21_", loopies_names[i], ".RDS"))
+  cat(loopies_names[i], " cors & stab successfully saved as RDS \n")
+  
+  try4 <- SpiecEasi_to_igraph(try3)
+  
+  try5 <- igraph_to_gephi_jts(try4, paste0("./gephi/", loopies_names[i], ".gexf"))
+  cat("\n \n")
+}
+
+
+```
+
+
+
+
+
+
+
+

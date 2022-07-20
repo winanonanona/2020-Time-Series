@@ -1,0 +1,144 @@
+#NEXUS
+begin taxa;
+	dimensions ntax=42;
+	taxlabels
+	amp_01_Aureispira_CCB-QB1_GCF_000724545
+	amp_02_Aureispira_maritima_NR_041537
+	amp_03_Flavilitoribacter_nigricans_GCF_002646595
+	amp_04_Haliscomenobacter_hydrossis_GCF_000212735
+	amp_05_Haliscomenobacter_hydrossis_GCF_000212735
+	amp_06_Lewinella_agarilytica_GCF_900110645
+	amp_07_Lewinella_aquimaris_GCF_014197245
+	amp_08_Lewinella_aurantiaca_GCF_008014675
+	amp_09_Lewinella_cohaerens_GCF_000379805
+	amp_10_Lewinella_cohaerens_GCF_000379805
+	amp_11_Lewinella_IMCC34183_GCF_003390915
+	amp_12_Lewinella_IMCC34191_GCF_003390935
+	amp_13_Lewinella_lacunae_GCF_014349155
+	amp_14_Lewinella_lacunae_GCF_014349155
+	amp_15_Lewinella_lacunae_GCF_014349155
+	amp_16_Lewinella_lacunae_GCF_014349155
+	amp_17_Lewinella_litorea_GCF_004803465
+	amp_18_Lewinella_marina_GCF_002631205
+	amp_19_Lewinella_persica_GCF_000373105
+	amp_20_Membranicola_marinus_NR_148805
+	amp_21_Phaeodactylibacter_luteus_GCF_007993045
+	amp_22_Phaeodactylibacter_xiamenensis_GCF_000759025
+	amp_23_Phaeodactylibacter_xiamenensis_GCF_000759025
+	amp_24_Phaeodactylibacter_xiamenensis_GCF_000759025
+	amp_25_Rubidimonas_crustatorum_NR_113282
+	amp_26_Saprospira_grandis_GCF_000250635
+	amp_27_Saprospira_grandis_GCF_000250635
+	amp_28_Saprospira_grandis_GCF_000250635
+	amp_29_Saprospira_grandis_GCF_000275825
+	amp_30_Saprospira_grandis_GCF_000275825
+	amp_31_Saprospira_grandis_GCF_000275825
+	amp_32_Saprospira_grandis_NR_104966
+	asv0037_Saprospiraceae
+	asv0055_Saprospiraceae
+	asv0138_Saprospiraceae
+	asv0169_Saprospiraceae
+	asv0193_Saprospiraceae_Lewinella
+	asv0209_Saprospiraceae_Lewinella
+	asv0211_Saprospiraceae
+	asv0219_Saprospiraceae
+	asv0230_Saprospiraceae_Phaeodactylibacter
+	asv0280_Saprospiraceae
+;
+end;
+
+begin trees;
+	tree tree_1 = [&R] ((amp_08_Lewinella_aurantiaca_GCF_008014675:0.01646,((amp_13_Lewinella_lacunae_GCF_014349155:0.0,amp_15_Lewinella_lacunae_GCF_014349155:0.0):0.01761,(amp_06_Lewinella_agarilytica_GCF_900110645:0.01741,(amp_17_Lewinella_litorea_GCF_004803465:0.01084,(amp_07_Lewinella_aquimaris_GCF_014197245:0.01569,amp_11_Lewinella_IMCC34183_GCF_003390915:0.01568)[&label=0.87]:0.01511)[&label=1.0]:0.06165)[&label=0.739]:0.00201)[&label=0.647]:0.01243)[&label=0.987]:0.04414,(amp_02_Aureispira_maritima_NR_041537:0.04514,(amp_20_Membranicola_marinus_NR_148805:0.09377,(amp_32_Saprospira_grandis_NR_104966:6.4E-4,(amp_28_Saprospira_grandis_GCF_000250635:6.4E-4,(amp_29_Saprospira_grandis_GCF_000275825:0.0,amp_30_Saprospira_grandis_GCF_000275825:0.0,amp_31_Saprospira_grandis_GCF_000275825:0.0):0.00255)[&label=0.921]:0.00229)[&label=1.0]:0.10082)[&label=0.582]:0.03097)[&label=0.976]:0.03798,((asv0055_Saprospiraceae[&!color=#ff8080]:0.00142,(asv0138_Saprospiraceae[&!color=#ff8080]:6.4E-4,asv0280_Saprospiraceae[&!color=#ff8080]:0.00253)[&label=0.911,!color=#ff8080]:0.0088)[&label=1.0,!color=#ff8080]:0.05959,((asv0037_Saprospiraceae[&!color=#ff8080]:0.04142,asv0211_Saprospiraceae[&!color=#ff8080]:0.03845)[&label=0.792,!color=#ff8080]:0.01404,((asv0230_Saprospiraceae_Phaeodactylibacter[&!color=#ff8080]:0.05897,(asv0193_Saprospiraceae_Lewinella[&!color=#ff8080]:6.4E-4,asv0209_Saprospiraceae_Lewinella[&!color=#ff8080]:0.00218)[&label=0.999,!color=#ff8080]:0.05618)[&label=0.5,!color=#ff8080]:0.01413,((amp_05_Haliscomenobacter_hydrossis_GCF_000212735:0.04001,(amp_21_Phaeodactylibacter_luteus_GCF_007993045:0.05306,(amp_25_Rubidimonas_crustatorum_NR_113282:0.10267,((amp_03_Flavilitoribacter_nigricans_GCF_002646595:0.0574,(amp_04_Haliscomenobacter_hydrossis_GCF_000212735:0.05374,((amp_22_Phaeodactylibacter_xiamenensis_GCF_000759025:0.0,amp_23_Phaeodactylibacter_xiamenensis_GCF_000759025:0.0):0.00249,amp_24_Phaeodactylibacter_xiamenensis_GCF_000759025:6.4E-4)[&label=0.993]:0.05562)[&label=0.901]:0.03894)[&label=0.194]:7.2E-4,((amp_09_Lewinella_cohaerens_GCF_000379805:0.0,amp_10_Lewinella_cohaerens_GCF_000379805:0.0):0.03675,((((amp_14_Lewinella_lacunae_GCF_014349155:0.0,amp_16_Lewinella_lacunae_GCF_014349155:0.0):0.01151,amp_19_Lewinella_persica_GCF_000373105:0.00624)[&label=0.79]:0.02293,(amp_12_Lewinella_IMCC34191_GCF_003390935:0.02792,amp_18_Lewinella_marina_GCF_002631205:0.00825)[&label=0.989]:0.04352)[&label=0.736]:0.02858,(amp_01_Aureispira_CCB-QB1_GCF_000724545:0.04227,(amp_26_Saprospira_grandis_GCF_000250635:0.0,amp_27_Saprospira_grandis_GCF_000250635:0.0):0.11676)[&label=0.992]:0.05442)[&label=0.897]:0.02278)[&label=0.811]:0.02402)[&label=1.0]:1.45188)[&label=0.271]:0.01788)[&label=0.326]:0.02298)[&label=0.193]:0.00314,(asv0169_Saprospiraceae[&!color=#ff8080]:6.4E-4,asv0219_Saprospiraceae[&!color=#ff8080]:0.00252)[&label=0.998,!color=#ff8080]:0.08585)[&label=0.991,!color=#ff8080]:0.04518)[&label=0.771,!color=#ff8080]:0.0222)[&label=0.516,!color=#ff8080]:0.01342)[&label=0.898]:0.02322);
+end;
+
+begin figtree;
+	set appearance.backgroundColorAttribute="Default";
+	set appearance.backgroundColour=#ffffff;
+	set appearance.branchColorAttribute="User selection";
+	set appearance.branchColorGradient=false;
+	set appearance.branchLineWidth=1.0;
+	set appearance.branchMinLineWidth=0.0;
+	set appearance.branchWidthAttribute="Fixed";
+	set appearance.foregroundColour=#000000;
+	set appearance.hilightingGradient=false;
+	set appearance.selectionColour=#2d3680;
+	set branchLabels.colorAttribute="User selection";
+	set branchLabels.displayAttribute="Branch times";
+	set branchLabels.fontName="sansserif";
+	set branchLabels.fontSize=8;
+	set branchLabels.fontStyle=0;
+	set branchLabels.isShown=false;
+	set branchLabels.significantDigits=4;
+	set layout.expansion=0;
+	set layout.layoutType="RECTILINEAR";
+	set layout.zoom=0;
+	set legend.attribute="label";
+	set legend.fontSize=10.0;
+	set legend.isShown=false;
+	set legend.significantDigits=4;
+	set nodeBars.barWidth=4.0;
+	set nodeBars.displayAttribute=null;
+	set nodeBars.isShown=false;
+	set nodeLabels.colorAttribute="User selection";
+	set nodeLabels.displayAttribute="Node ages";
+	set nodeLabels.fontName="sansserif";
+	set nodeLabels.fontSize=8;
+	set nodeLabels.fontStyle=0;
+	set nodeLabels.isShown=false;
+	set nodeLabels.significantDigits=4;
+	set nodeShapeExternal.colourAttribute="User selection";
+	set nodeShapeExternal.isShown=false;
+	set nodeShapeExternal.minSize=10.0;
+	set nodeShapeExternal.scaleType=Width;
+	set nodeShapeExternal.shapeType=Circle;
+	set nodeShapeExternal.size=4.0;
+	set nodeShapeExternal.sizeAttribute="Fixed";
+	set nodeShapeInternal.colourAttribute="User selection";
+	set nodeShapeInternal.isShown=false;
+	set nodeShapeInternal.minSize=10.0;
+	set nodeShapeInternal.scaleType=Width;
+	set nodeShapeInternal.shapeType=Circle;
+	set nodeShapeInternal.size=4.0;
+	set nodeShapeInternal.sizeAttribute="Fixed";
+	set polarLayout.alignTipLabels=false;
+	set polarLayout.angularRange=0;
+	set polarLayout.rootAngle=0;
+	set polarLayout.rootLength=100;
+	set polarLayout.showRoot=true;
+	set radialLayout.spread=0.0;
+	set rectilinearLayout.alignTipLabels=false;
+	set rectilinearLayout.curvature=0;
+	set rectilinearLayout.rootLength=0;
+	set scale.offsetAge=0.0;
+	set scale.rootAge=1.0;
+	set scale.scaleFactor=1.0;
+	set scale.scaleRoot=false;
+	set scaleAxis.automaticScale=true;
+	set scaleAxis.fontSize=8.0;
+	set scaleAxis.isShown=false;
+	set scaleAxis.lineWidth=1.0;
+	set scaleAxis.majorTicks=0.1;
+	set scaleAxis.minorTicks=0.05;
+	set scaleAxis.origin=0.0;
+	set scaleAxis.reverseAxis=false;
+	set scaleAxis.showGrid=true;
+	set scaleBar.automaticScale=true;
+	set scaleBar.fontSize=10.0;
+	set scaleBar.isShown=true;
+	set scaleBar.lineWidth=1.0;
+	set scaleBar.scaleRange=0.0;
+	set tipLabels.colorAttribute="User selection";
+	set tipLabels.displayAttribute="Names";
+	set tipLabels.fontName=".AppleSystemUIFont";
+	set tipLabels.fontSize=8;
+	set tipLabels.fontStyle=0;
+	set tipLabels.isShown=true;
+	set tipLabels.significantDigits=4;
+	set trees.order=false;
+	set trees.orderType="increasing";
+	set trees.rooting=true;
+	set trees.rootingType="User Selection";
+	set trees.transform=false;
+	set trees.transformType="cladogram";
+end;
+

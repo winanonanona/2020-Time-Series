@@ -1,0 +1,251 @@
+---
+title: "R Notebook"
+output: html_notebook
+editor_options: 
+  chunk_output_type: console
+---
+
+# Introduction
+Author: Winona Wijaya
+Last updated: 20 Jul 2022
+
+```{r, echo=F}
+library(tidyverse)
+library(ggpubr)
+library(lubridate)
+```
+
+## Nutrient ratios
+```{r}
+metadata <- data.frame(read.csv("metadata_27jan.csv"), stringsAsFactors = FALSE, row.names = NULL)
+rownames(metadata) <- metadata$sample_label
+
+metadata_new <- metadata %>% 
+  mutate("NOx:PO4" = NOx/Phosphate) %>% 
+  mutate("NO3:PO4" = NO3/Phosphate) %>% 
+  mutate("NOx:Si" = NOx/Silicate) %>% 
+  mutate("NO3:Si" = NO3/Silicate) %>% 
+  mutate("Si:PO4" = Silicate/Phosphate) %>% 
+  mutate(Current_ef = case_when(Current > 0 ~ "Flood", Current < 0 ~ "Ebb", TRUE ~ "Phase Change"))
+```
+
+## Splitting east & west
+```{r}
+metadata_new_ts <- metadata_new %>% 
+  filter(Sampling_Day != 31 & Sampling_Day != 0) %>% 
+  select(-Rain_1, -Rain_5, -Rain_7)
+
+metadata_new_filt <- metadata_new %>% 
+  filter(Sampling_Day == 31 | Sampling_Day == 0)
+
+metadata_new[metadata_new==Inf] <- 1000
+
+metadata_new_east <- metadata_new_ts %>% 
+  filter(EW == "East")
+
+metadata_new_west <- metadata_new_ts %>% 
+  filter(EW == "West")
+
+```
+
+
+## Calculate Rain1-Rain7
+```{r}
+rain_adm <- read.csv("DAILYDATA_admiralty_202010.csv") %>% 
+  rbind(read.csv("DAILYDATA_admiralty_202011.csv")) %>% 
+  rbind(read.csv("DAILYDATA_admiralty_202012.csv")) %>%
+  mutate(date = dmy(paste(Day, Month, Year, sep = "-"))) %>% 
+  arrange(date) %>% 
+  select(date, Daily.Rainfall.Total..mm.)
+colnames(rain_adm)[2] <- "total_rainfall_mm"
+
+rain_ysh <- read.csv("DAILYDATA_yishun_202010.csv") %>% 
+  rbind(read.csv("DAILYDATA_yishun_202011.csv")) %>% 
+  rbind(read.csv("DAILYDATA_yishun_202012.csv")) %>%
+  mutate(date = dmy(paste(Day, Month, Year, sep = "-"))) %>% 
+  arrange(date) %>% 
+  select(date, Daily.Rainfall.Total..mm.)
+colnames(rain_ysh)[2] <- "total_rainfall_mm"
+
+
+rain_sum <- function(dates, rain_data, days_before){
+  #dates in date format
+  #rain_data is a dataframe, first column "date" is date in date format, second column "total_rainfall_mm" is daily total rainfall in mm
+  # output is a dataframe with dates and sum of rain xx days before (exclusive)
+  date_rainx <- data.frame(date = dates, rain = 0)
+  for(i in 1:length(dates)){
+    date <- dates[i]
+    index <- which(rain_data$date == date)
+    end <- index-1
+    start <- index-days_before
+    date_rainx$rain[i] <- sum(rain_data$total_rainfall_mm[c(start : end)])
+  }
+  return(date_rainx)
+}
+
+
+#East side use yishun rain
+#West side use Admiralty rain
+dates_all <- unique(as_date(metadata_new_ts[ , "Date"], origin = dmy("30-12-1899")))
+
+rain7_east <- rain_sum(dates_all, rain_ysh, 7)
+rain6_east <- rain_sum(dates_all, rain_ysh, 6)
+rain5_east <- rain_sum(dates_all, rain_ysh, 5)
+rain4_east <- rain_sum(dates_all, rain_ysh, 4)
+rain3_east <- rain_sum(dates_all, rain_ysh, 3)
+rain2_east <- rain_sum(dates_all, rain_ysh, 2)
+rain1_east <- rain_sum(dates_all, rain_ysh, 1)
+
+rain7_west <- rain_sum(dates_all, rain_adm, 7)
+rain6_west <- rain_sum(dates_all, rain_adm, 6)
+rain5_west <- rain_sum(dates_all, rain_adm, 5)
+rain4_west <- rain_sum(dates_all, rain_adm, 4)
+rain3_west <- rain_sum(dates_all, rain_adm, 3)
+rain2_west <- rain_sum(dates_all, rain_adm, 2)
+rain1_west <- rain_sum(dates_all, rain_adm, 1)
+```
+
+## Calculate dates from nearest neap/spring tide
+```{r}
+tides <- read.csv("springneaptides.csv")
+tides$date <- dmy(tides$date)
+
+tides_spring <- tides %>% #when are all spring tides
+  filter(Tide == "spring")
+
+tides_neap <- tides %>% #when are all neap tides
+  filter(Tide == "neap")
+
+diff_nearest <- function(date, tides){
+  return(as.numeric(min(abs(date-tides))))
+}
+
+
+tides_ns <- data.frame(date = dates_all,
+                       neap_days = 0,
+                       spring_days = 0)
+
+for (i in 1:length(dates_all)){
+  day <- dates_all[i]
+  neap_temp <- diff_nearest(day, tides_neap$date)
+  spring_temp <- diff_nearest(day, tides_spring$date)
+  tides_ns$neap_days[i] <- neap_temp
+  tides_ns$spring_days[i] <- spring_temp
+}
+
+```
+
+
+## Extracting tide heights
+
+### different timing every E/W, E at 
+```{r, eval = F}
+sbw_tide_heights <- read.csv("./NTU se 01-Oct-20-31-Dec-20.csv", header = T)
+sbw_tide_heights$Date_time <- dmy_hm(sbw_tide_heights$Date_time)
+
+dates_0900 <- data.frame(date = as.character(dates_all), time = "09:00") %>% 
+  mutate(cont = paste(date, time))
+dates_0900 <- ymd_hm(dates_0900$cont)
+
+dates_1030 <- data.frame(date = as.character(dates_all), time = "10:30") %>% 
+  mutate(cont = paste(date, time))
+dates_1030 <- ymd_hm(dates_1030$cont)
+
+tides_hl_east <- data.frame(time = dates_0900) %>% 
+  left_join(sbw_tide_heights, by = c("time" = "Date_time"))
+tides_hl_east$time <- ymd(format(tides_hl_east$time, format = "%Y-%m-%d"))
+
+tides_hl_west <- data.frame(time = dates_1030) %>% 
+  left_join(sbw_tide_heights, by = c("time" = "Date_time"))
+tides_hl_west$time <- ymd(format(tides_hl_west$time, format = "%Y-%m-%d"))
+```
+
+### same timing e/w, at 10am
+```{r, eval = T}
+sbw_tide_heights <- read.csv("./NTU se 01-Oct-20-31-Dec-20.csv", header = T)
+sbw_tide_heights$Date_time <- dmy_hm(sbw_tide_heights$Date_time)
+
+dates_1000 <- data.frame(date = as.character(dates_all), time = "10:00") %>% 
+  mutate(cont = paste(date, time))
+dates_1000 <- ymd_hm(dates_1000$cont)
+
+tides_hl_1000 <- data.frame(time = dates_1000) %>% 
+  left_join(sbw_tide_heights, by = c("time" = "Date_time"))
+tides_hl_1000$time <- ymd(format(tides_hl_1000$time, format = "%Y-%m-%d"))
+```
+
+
+
+## Joining all together
+```{r}
+metadata_newer_east <- metadata_new_east %>% 
+  mutate(Date_dmy = as_date(Date, origin = dmy("30-12-1899"))) %>% 
+  left_join(rain2_east, by = c("Date_dmy" = "date")) %>% 
+  rename(Rain_2 = rain) %>% 
+  left_join(rain3_east, by = c("Date_dmy" = "date")) %>% 
+  rename(Rain_3 = rain) %>% 
+  left_join(rain4_east, by = c("Date_dmy" = "date")) %>% 
+  rename(Rain_4 = rain) %>% 
+  left_join(rain6_east, by = c("Date_dmy" = "date")) %>% 
+  rename(Rain_6 = rain) %>% 
+  left_join(tides_ns, by = c("Date_dmy" = "date")) %>% 
+  left_join(tides_hl_1000, by = c("Date_dmy" = "time")) %>% 
+  left_join(rain1_east, by = c("Date_dmy" = "date")) %>% 
+  rename(Rain_1 = rain) %>% 
+  left_join(rain5_east, by = c("Date_dmy" = "date")) %>% 
+  rename(Rain_5 = rain)%>% 
+  left_join(rain7_east, by = c("Date_dmy" = "date")) %>% 
+  rename(Rain_7 = rain)
+
+metadata_newer_west <- metadata_new_west %>% 
+  mutate(Date_dmy = as_date(Date, origin = dmy("30-12-1899"))) %>% 
+  left_join(rain2_west, by = c("Date_dmy" = "date")) %>% 
+  rename(Rain_2 = rain) %>% 
+  left_join(rain3_west, by = c("Date_dmy" = "date")) %>% 
+  rename(Rain_3 = rain) %>% 
+  left_join(rain4_west, by = c("Date_dmy" = "date")) %>% 
+  rename(Rain_4 = rain) %>% 
+  left_join(rain6_west, by = c("Date_dmy" = "date")) %>% 
+  rename(Rain_6 = rain) %>% 
+  left_join(tides_ns, by = c("Date_dmy" = "date")) %>% 
+  left_join(tides_hl_1000, by = c("Date_dmy" = "time")) %>% 
+  left_join(rain1_west, by = c("Date_dmy" = "date")) %>% 
+  rename(Rain_1 = rain) %>% 
+  left_join(rain5_west, by = c("Date_dmy" = "date")) %>% 
+  rename(Rain_5 = rain)%>% 
+  left_join(rain7_west, by = c("Date_dmy" = "date")) %>% 
+  rename(Rain_7 = rain)
+
+
+metadata_new_confirm <- metadata_newer_east %>% 
+  rbind(metadata_newer_west)
+
+write.csv(metadata_new_confirm, "metadata_0215.csv")
+```
+
+
+
+
+```{r}
+metadata_newer <- read.csv("metadata_0215.csv")
+
+metadata_newer$Date_dmy <- dmy(metadata_newer$Date_dmy)
+```
+
+# Calculate days of rain
+```{r}
+rain_adm <- read.csv("DAILYDATA_admiralty_202011.csv") %>% 
+  rbind(read.csv("DAILYDATA_admiralty_202012.csv")) %>%
+  mutate(date = dmy(paste(Day, Month, Year, sep = "-"))) %>% 
+  arrange(date) %>% 
+  select(date, Daily.Rainfall.Total..mm.)
+colnames(rain_adm)[2] <- "total_rainfall_mm"
+
+rain_ysh <- read.csv("DAILYDATA_yishun_202011.csv") %>% 
+  rbind(read.csv("DAILYDATA_yishun_202012.csv")) %>%
+  mutate(date = dmy(paste(Day, Month, Year, sep = "-"))) %>% 
+  arrange(date) %>% 
+  select(date, Daily.Rainfall.Total..mm.)
+colnames(rain_ysh)[2] <- "total_rainfall_mm"
+```
+

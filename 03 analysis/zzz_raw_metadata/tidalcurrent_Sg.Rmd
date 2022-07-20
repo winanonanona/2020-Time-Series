@@ -1,0 +1,161 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+# Introduction
+Author: Rohan Shawn Sunil
+Last updated: 19 Jul 2022
+
+This is for attaining the current at 10am based on Singapore tidal data for November and December 2020. 
+
+
+```{r}
+
+#load packages
+
+library(rootSolve)
+library(dplyr)
+
+
+
+
+#read excel file of tide heights
+
+sgtide <- read.csv("singapore_tide.csv", check.names = FALSE)
+
+
+
+
+
+#manipulating data
+
+sgtide <- as.data.frame(sapply(sgtide, as.double))
+
+
+count <- 2
+var <- 48
+sg_tide_table <- as.data.frame(matrix(ncol=0,nrow=var))
+  
+while (count <= length(rownames(sgtide))-(var-1)){
+  tide_list <- as.data.frame(sgtide[count:(count+var-1),2])
+  sg_tide_table <- cbind(sg_tide_table,tide_list)
+  count <- count + var
+}
+
+
+sg_tide_nov <- sg_tide_table[,32:61]
+sg_tide_dec <- sg_tide_table[,62:92]
+
+
+hours_sg <- seq(0, 23.5, by=0.5)
+
+sg_tide_nov <- sg_tide_nov %>%
+  cbind(hours_sg)
+sg_tide_dec <- sg_tide_dec %>%
+  cbind(hours_sg)
+
+
+
+
+
+
+
+
+
+#construct polynomial of degree 10 to fit the tidal height data for each day
+#then take the gradient at 10am (x=10) to get the value for tidal current
+
+
+    #november
+
+nov_current_sg <- c()
+
+count <- 0
+
+for (i in 1:(length(colnames(sg_tide_nov))-1)){
+
+  count = count+1
+
+  day <- sg_tide_nov[[count]]
+
+  fit10 <- lm(day~poly(hours_sg,10,raw=TRUE), data=sg_tide_nov)
+
+  fn <- function(x){
+  fit10$coefficients[11]*x^10 + fit10$coefficients[10]*x^9 + fit10$coefficients[9]*x^8 +   fit10$coefficients[8]*x^7 + fit10$coefficients[7]*x^6 + fit10$coefficients[6]*x^5 + fit10$coefficients[5]*x^4 + fit10$coefficients[4]*x^3 + fit10$coefficients[3]*x^2 + fit10$coefficients[2]*x + fit10$coefficients[1]
+}
+
+  grad <- gradient(fn,10)
+  nov_current_sg <- c(nov_current_sg, grad)
+
+}
+
+nov_tide_table_sg <- as.data.frame(nov_current_sg)
+nov_date <- 1:30
+nov_tide_table_sg <- nov_tide_table_sg %>% cbind(nov_date)
+
+nov_sampling_dates <- c(4,6,7,9,11,13,16,18,20,21,23,25,27,28,30)
+nov_tide_table_sg <- nov_tide_table_sg %>%
+  filter(nov_date %in% nov_sampling_dates)
+
+colnames(nov_tide_table_sg)[1] <- "current"
+colnames(nov_tide_table_sg)[2] <- "date"
+
+
+
+
+    #december
+
+dec_current_sg <- c()
+
+count <- 0
+
+for (i in 1:(length(colnames(sg_tide_dec))-1)){
+
+  count = count+1
+
+  day <- sg_tide_dec[[count]]
+
+  fit10 <- lm(day~poly(hours_sg,10,raw=TRUE), data=sg_tide_dec)
+
+  fn <- function(x){
+  fit10$coefficients[11]*x^10 + fit10$coefficients[10]*x^9 + fit10$coefficients[9]*x^8 +   fit10$coefficients[8]*x^7 + fit10$coefficients[7]*x^6 + fit10$coefficients[6]*x^5 + fit10$coefficients[5]*x^4 + fit10$coefficients[4]*x^3 + fit10$coefficients[3]*x^2 + fit10$coefficients[2]*x + fit10$coefficients[1]
+}
+
+  grad <- gradient(fn,10)
+  dec_current_sg <- c(dec_current_sg, grad)
+
+}
+
+dec_tide_table_sg <- as.data.frame(dec_current_sg)
+dec_date <- 1:31
+dec_tide_table_sg <- dec_tide_table_sg %>% cbind(dec_date)
+
+
+dec_sampling_dates <- c(2,4,5,7,9,11,12,14,16,18,19,21,23,26,28)
+dec_tide_table_sg <- dec_tide_table_sg %>%
+  filter(dec_date %in% dec_sampling_dates)
+
+
+colnames(dec_tide_table_sg)[1] <- "current"
+colnames(dec_tide_table_sg)[2] <- "date"
+
+
+
+
+
+
+
+
+
+#final tidal current table for each site
+#exclude SNB23 and STL23 for Malaysian sites
+
+singapore_tide_table <- rbind(nov_tide_table_sg,dec_tide_table_sg)
+johor_tide_table <- singapore_tide_table[-c(23),]
+
+
+
+
+```
+

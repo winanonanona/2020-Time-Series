@@ -1,0 +1,120 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+# Introduction
+Author: Winona Wijaya
+Last updated: 20 Jul 2022
+
+Done:
+- Correlation between all metadata variables
+- Also done per site
+
+# Load Everything
+## Load Libraries
+```{r, message = FALSE}
+library("tidyverse")
+library("Biostrings")
+
+library("phyloseq")
+library("vegan")
+library("corrplot")
+
+library("viridis")
+source("~/OneDrive - Nanyang Technological University/common bioinformatics/extra_functions copy.R")
+options(stringsAsFactors = FALSE)
+
+dir_phyloseq <- "./phyloseq/"
+dir_corr <- "./corr/"
+dir_main <- "./main/"
+dir_supp <- "./supplementary/"
+
+```
+
+## Load the previously made file
+```{r}
+# Run for lazy loading
+metadata_ts <- readRDS("./19_metadata_ts.RDS")
+centroids_ts <- readRDS("./20_centroids.RDS")
+points_ts <- readRDS("./20_points_ts.RDS")
+```
+
+
+# Metadata Correlations
+in the other Rmd, we have calculated where the centre of each sample (aka the centroid), & distance between each sample to their centroid, and shannon/simpson indexes.
+```{r}
+library(corrplot)
+labelsitelist <- metadata_ts[, c("sample_label", "Site")]
+metadata_ts_numsites <- metadata_ts %>% 
+  left_join(centroids_ts, by = "Sampling_Day") %>% 
+  left_join(points_ts, by = c("sample_label" = "sample_name")) %>% 
+  select_if(is.numeric) %>% 
+  select(-c(latitude:Date, MDS1.x:MDS2.x, MDS1.y:day)) %>% 
+  bind_cols(labelsitelist)
+saveRDS(metadata_ts_numsites, "20_metadata_ts_numsites.RDS")
+
+metadata_ts_distances <- metadata_ts_numsites %>% 
+  select(-sample_label, -Site)
+
+corrplot(cor(metadata_ts_distances, use = "pairwise.complete.obs"), method = "color", type = "upper",addCoef.col = "black")
+
+jpeg(paste0(dir_main,"corrplot_distances.jpeg"), width = 1400, height = 1400, quality = 330)
+corrplot(cor(metadata_ts_distances, use = "pairwise.complete.obs"), method = "color", type = "upper",addCoef.col = "black")
+dev.off()
+```
+
+
+### Small
+```{r}
+metadata_ts_numsites <- readRDS("20_metadata_ts_numsites.RDS")
+
+metadata_ts_short <- metadata_ts_numsites %>% 
+  select(Rain_1, Rain_3, Rain_5, Current:Chlorophyll_Unfiltered, Salinity:Bacteria.ml)
+
+corrplot(cor(metadata_ts_short, use = "pairwise.complete.obs"), method = "color", type = "upper", addCoef.col = "black")
+
+jpeg(paste0(dir_main,"corrplot_distances_short.jpeg"), width = 950, height = 950, quality = 330)
+corrplot(cor(metadata_ts_short, use = "pairwise.complete.obs"), method = "color", type = "upper", addCoef.col = "black")
+dev.off()
+```
+
+
+
+## Try Per Location
+```{r}
+#SBW only
+metadata_ts_sbw <- metadata_ts_numsites %>% 
+  filter(Site == "SBW") %>% 
+  select(-sample_label, -Site)
+corrplot(cor(metadata_ts_sbw, use = "pairwise.complete.obs"), method = "color", type = "upper",addCoef.col = "black")
+jpeg(paste0(dir_corr,"corrplot_distances_sbw.jpg"), width = 1400, height = 1400, quality = 330)
+corrplot(cor(metadata_ts_sbw, use = "pairwise.complete.obs"), method = "color", type = "upper",addCoef.col = "black")
+dev.off()
+
+#SNB only
+metadata_ts_snb <- metadata_ts_numsites %>% 
+  filter(Site == "SNB") %>% 
+select(-sample_label, -Site)
+corrplot(cor(metadata_ts_snb, use = "pairwise.complete.obs"), method = "color", type = "upper",addCoef.col = "black")
+jpeg(paste0(dir_corr,"corrplot_distances_snb.jpg"), width = 1400, height = 1400, quality = 330)
+corrplot(cor(metadata_ts_snb, use = "pairwise.complete.obs"), method = "color", type = "upper",addCoef.col = "black")
+dev.off()
+
+#STL only
+metadata_ts_stl <- metadata_ts_numsites %>% 
+  filter(Site == "STL") %>% 
+select(-sample_label, -Site)
+corrplot(cor(metadata_ts_stl, use = "pairwise.complete.obs"), method = "color", type = "upper",addCoef.col = "black")
+jpeg(paste0(dir_corr,"corrplot_distances_stl.jpg"), width = 1400, height = 1400, quality = 330)
+corrplot(cor(metadata_ts_stl, use = "pairwise.complete.obs"), method = "color", type = "upper",addCoef.col = "black")
+dev.off()
+
+#WDL only
+metadata_ts_wdl <- metadata_ts_numsites %>% 
+  filter(Site == "WDL") %>% 
+select(-sample_label, -Site)
+corrplot(cor(metadata_ts_wdl, use = "pairwise.complete.obs"), method = "color", type = "upper",addCoef.col = "black")
+jpeg(paste0(dir_corr,"corrplot_distances_wdl.jpg"), width = 1400, height = 1400, quality = 330)
+corrplot(cor(metadata_ts_wdl, use = "pairwise.complete.obs"), method = "color", type = "upper",addCoef.col = "black")
+dev.off()
+```

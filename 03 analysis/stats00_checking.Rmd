@@ -1,0 +1,190 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+# Introduction
+Author: Winona Wijaya
+Last updated: 20 Jul 2022
+
+Need to check:
+- Positive controls
+- Whether noise between samples are more or less than difference between locations on the same day
+
+
+# Load Everything
+## Load Libraries
+```{r, message = FALSE}
+library("tidyverse")
+library("Biostrings")
+library("ggforce")
+library("ggpubr")
+
+library("dada2")
+library("phyloseq")
+library("vegan")
+
+library("viridis")
+source("~/OneDrive - Nanyang Technological University/common bioinformatics/extra_functions copy.R")
+options(stringsAsFactors = FALSE)
+
+dir_phyloseq <- "./phyloseq/"
+dir_dada2 <- "./dada2/"
+
+seqtab_final_noNAs <- readRDS("17_seqtab_final_noNAs.RDS")
+```
+
+
+# Check Positive Controls
+Get phyloseq object of positive controls
+```{r}
+seqtab_positive <- seqtab_final_noNAs %>% 
+  select(Kingdom:sequence, MP1v2:MP3v2, SP1v2:SP3v2)
+temp <- apply(seqtab_positive[,19:24], 1, sum)
+seqtab_positive <- seqtab_positive[temp>=10, ]
+rownames(seqtab_positive) <- NULL
+
+# Seqtab Final No NAs
+OTU <- seqtab_positive %>%
+  column_to_rownames("ASVNumber") %>%
+  select_if(is.numeric) %>% 
+  select(-contains("_boot")) %>%
+  as.matrix() %>%
+  otu_table(taxa_are_rows = TRUE)
+
+TAX <- seqtab_positive %>%
+  column_to_rownames("ASVNumber") %>%
+  select(Kingdom:Species) %>% 
+  as.matrix() %>% 
+  tax_table()
+
+ps_positive <- phyloseq(OTU, TAX)
+ps_positive
+saveRDS(ps_positive, "99_phyloseq_positive.RDS")
+```
+
+### Plot
+```{r}
+# Ordination
+set.seed(42)
+ordinatez <- ordinate(ps_positive, method = "NMDS", distance = "bray")
+plot_ordination(ps_positive, ordinatez)
+
+
+# Bar plot
+ps_positive_abund <- ps_positive %>% 
+  ps_normalize_median("All")
+
+plot_bar(ps_positive_abund, fill = "Genus", title = "Positive Controls") +
+  scale_fill_viridis_d()
+
+#normalisation: 97489
+ps_positive_genus <- tax_glom(ps_positive, "Genus")
+positive_genus <- as.data.frame(otu_table(ps_positive_genus)@.Data)
+temp <- as.data.frame(ps_positive_genus@tax_table@.Data)
+positive_genus <- positive_genus %>% 
+  rownames_to_column("ASV.Number") %>% 
+  cbind(temp$Genus)
+
+temp <- apply(positive_genus[ , 2:7], 2, sum)
+positive_genus_pct <- positive_genus
+for (i in 2:7){
+  positive_genus_pct[,i] <- positive_genus[,i]/temp[i-1]*100
+}
+
+```
+
+
+
+# Check Noise
+```{r}
+seqtab_ts <- seqtab_final_noNAs %>% 
+  select(SBW01:SBW30, SNB01:SNB30, STL01:STL30, WDL01:WDL30, SBW01v2:SBW30v2, SNB01v2:SNB30v2, STL01v2:STL30v2, WDL01v2:WDL30v2)
+temp <- apply(seqtab_ts, 2, sum)
+seqtab_ts <- seqtab_ts[, temp>=1e4]
+temp <- apply(seqtab_ts, 1, sum)
+seqtab_ts <- seqtab_ts[temp>=10, ]
+
+dist_bray <- vegdist(t(seqtab_ts), method = "bray", upper = F)
+dist_braym <- as.matrix(dist_bray)
+
+# Get v1 vs v2 distance
+dist_bray_long <- data.frame()
+
+for (i in 117:226){
+  temp_v2 <- row.names(dist_braym)[i]
+  temp_v1 <- str_replace(temp_v2, "v2", "")
+  
+  tryCatch({
+    temp_append <- data.frame(V1 = temp_v1, V2 = temp_v2, distance = dist_braym[temp_v1, temp_v2])
+    dist_bray_long <- dist_bray_long %>% 
+      rbind(temp_append)
+  }, error = function(e) {
+    message(paste(temp_v1, "or", temp_v2, "doesn't exist"))
+  }
+  )
+}
+
+dist_bray_long <- dist_bray_long %>% 
+  mutate(Type = "By Replicate")
+
+#========== Get between location distance ==========
+dist_bray_location_v1 <- dist_bray_location_v2 <- data.frame()
+
+dist_braym_upper <- dist_braym
+dist_braym_upper[lower.tri(dist_braym_upper)] <- NA
+
+dist_braym_upper_v1 <- as.data.frame(dist_braym_upper[1:116, 1:116])
+dist_braym_upper_v2 <- as.data.frame(dist_braym_upper[117:227, 117:227])
+
+# V1
+for(i in 1:nrow(dist_braym_upper_v1)){
+  temp <- row.names(dist_braym_upper_v1)[i]
+  temp <- substr(temp, 4, 5)
+  temp_dist <- dist_braym_upper_v1 %>% 
+    select(contains(temp)) %>% 
+    rownames_to_column("V1")
+  temp_dist <- temp_dist[i, ]
+  temp_append <- pivot_longer(temp_dist, -V1, names_to = "V2", values_to = "distance")
+  
+  dist_bray_location_v1 <- dist_bray_location_v1 %>% 
+    rbind(temp_append)
+}
+dist_bray_location_v1 <- dist_bray_location_v1 %>% 
+  filter(distance > 0)
+
+#V2
+for(i in 1:nrow(dist_braym_upper_v2)){
+  temp <- row.names(dist_braym_upper_v2)[i]
+  temp <- substr(temp, 4, 5)
+  temp_dist <- dist_braym_upper_v2 %>% 
+    select(contains(temp)) %>% 
+    rownames_to_column("V1")
+  temp_dist <- temp_dist[i, ]
+  temp_append <- pivot_longer(temp_dist, -V1, names_to = "V2", values_to = "distance")
+  
+  dist_bray_location_v2 <- dist_bray_location_v2 %>% 
+    rbind(temp_append)
+}
+dist_bray_location_v2 <- dist_bray_location_v2 %>% 
+  filter(distance > 0)
+
+#==========COMBINE BOTH LOCATION & REPLICATE==========
+dist_bray_location <- dist_bray_location_v1 %>% 
+  rbind(dist_bray_location_v2) %>% 
+  mutate(Type = "By Location") %>% 
+  rbind(dist_bray_long)
+
+
+#==========PLOT===========
+ggplot(dist_bray_location, aes(x = Type, y = distance, color = Type)) +
+  geom_jitter(alpha = 0.5) +
+  geom_boxplot(alpha = 0.5) +
+  stat_compare_means(method = "wilcox.test") +
+  labs(title = "Distance between replicates")
+ggsave("./supplementary/noise.tiff", width = 10, height = 20, units = "cm", dpi = "retina")
+
+
+
+```
+
+

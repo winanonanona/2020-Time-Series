@@ -1,0 +1,168 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+# Introduction
+Author: Rohan Shawn Sunil
+Last updated: 19 Jul 2022
+
+This is for attaining the current at 10am based on Johor tidal data for November and December 2020. 
+Starting from an excel files of hourly tide height of every day of the month for November and December respectively.
+
+```{r}
+#read excel files of tide heights
+
+johortide_nov <- read.csv("johortide_nov.csv", check.names = FALSE)
+johortide_dec <- read.csv("johortide_dec.csv", check.names = FALSE)
+
+
+
+
+#manipulating data and changing headers
+
+
+    #november
+
+johortide_nov <- johortide_nov / 100
+
+colnames(johortide_nov)[1] <- "DAY"
+johortide_nov <- johortide_nov %>%
+  subset(select = -DAY)
+
+for (i in 1:length(colnames(johortide_nov))){
+  colnames(johortide_nov)[i] <- paste("H_",i-1, sep = "")
+}
+for (j in 1:length(rownames(johortide_nov))){
+  rownames(johortide_nov)[j] <- paste("D_",j, sep = "")
+}
+
+johortide_nov <- as.data.frame(t(johortide_nov))
+
+
+   #december
+
+johortide_dec <- johortide_dec / 100
+
+colnames(johortide_dec)[1] <- "DAY"
+johortide_dec <- johortide_dec %>%
+  subset(select = -DAY)
+
+for (i in 1:length(colnames(johortide_dec))){
+  colnames(johortide_dec)[i] <- paste("H_",i-1, sep = "")
+}
+
+for (j in 1:length(rownames(johortide_dec))){
+  rownames(johortide_dec)[j] <- paste("D_",j, sep = "")
+}
+
+johortide_dec <- as.data.frame(t(johortide_dec))
+
+
+
+
+# adding a column for hours
+
+hours <- 0:23
+johortide_nov <- johortide_nov %>%
+  cbind(hours)
+johortide_dec <- johortide_dec%>%
+  cbind(hours)
+
+
+
+
+
+
+#construct polynomial of degree 10 to fit the tidal height data for each day
+#then take the gradient at 10am (x=10) to get the value for tidal current
+
+
+    #november
+
+nov_current <- c()
+
+count <- 0
+
+for (i in 1:(length(colnames(johortide_nov))-1)){
+
+  count = count+1
+
+  day <- johortide_nov[[count]]
+
+  fit10 <- lm(day~poly(hours,10,raw=TRUE), data=johortide_nov)
+
+  fn <- function(x){
+  fit10$coefficients[11]*x^10 + fit10$coefficients[10]*x^9 + fit10$coefficients[9]*x^8 +   fit10$coefficients[8]*x^7 + fit10$coefficients[7]*x^6 + fit10$coefficients[6]*x^5 + fit10$coefficients[5]*x^4 + fit10$coefficients[4]*x^3 + fit10$coefficients[3]*x^2 + fit10$coefficients[2]*x + fit10$coefficients[1]
+}
+
+  grad <- gradient(fn,10)
+  nov_current <- c(nov_current, grad)
+
+}
+
+nov_tide_table <- as.data.frame(nov_current)
+
+nov_date <- 1:30
+nov_tide_table <- nov_tide_table %>% cbind(nov_date)
+
+nov_sampling_dates <- c(4,6,7,9,11,13,16,18,20,21,23,25,27,28,30)
+nov_tide_table <- nov_tide_table %>%
+  filter(nov_date %in% nov_sampling_dates)
+
+colnames(nov_tide_table)[1] <- "current"
+colnames(nov_tide_table)[2] <- "date"
+
+
+
+
+    #december
+
+dec_current <- c()
+
+count <- 0
+
+for (i in 1:(length(colnames(johortide_dec))-1)){
+
+  count = count+1
+
+  day <- johortide_dec[[count]]
+
+  fit10 <- lm(day~poly(hours,10,raw=TRUE), data=johortide_dec)
+
+  fn <- function(x){
+  fit10$coefficients[11]*x^10 + fit10$coefficients[10]*x^9 + fit10$coefficients[9]*x^8 +   fit10$coefficients[8]*x^7 + fit10$coefficients[7]*x^6 + fit10$coefficients[6]*x^5 + fit10$coefficients[5]*x^4 + fit10$coefficients[4]*x^3 + fit10$coefficients[3]*x^2 + fit10$coefficients[2]*x + fit10$coefficients[1]
+}
+
+  grad <- gradient(fn,10)
+  dec_current <- c(dec_current, grad)
+
+}
+
+dec_tide_table <- as.data.frame(dec_current)
+
+dec_date <- 1:31
+dec_tide_table <- dec_tide_table %>% cbind(dec_date)
+
+
+dec_sampling_dates <- c(2,4,5,7,9,11,12,14,16,18,19,21,23,26,28)
+dec_tide_table <- dec_tide_table %>%
+  filter(dec_date %in% dec_sampling_dates)
+
+colnames(dec_tide_table)[1] <- "current"
+colnames(dec_tide_table)[2] <- "date"
+
+
+
+
+
+
+#final tidal current table for each site
+#exclude SNB23 and STL23 for Malaysian sites
+
+tide_table <- rbind(nov_tide_table,dec_tide_table)
+tide_table_my <- tide_table[-c(23),]
+
+
+```
+

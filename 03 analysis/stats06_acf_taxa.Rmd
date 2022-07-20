@@ -1,0 +1,126 @@
+---
+title: "Metadata exploration"
+output: html_notebook
+---
+
+# Introduction
+Author: Winona Wijaya
+Last updated: 20 Jul 2022
+
+Done:
+- Discriminant Function Analysis - not for prediction, but just to get the DFA1 value which nicely represents the community structure with one number
+- Autocorrelation of DFA at every site to see whether there are distinguishable temporal patterns to the community structure (there are none) since it looks like there is a cycle (see nMDS)
+
+# Load Everything
+## Load Libraries
+```{r, message = FALSE, results = "hide", echo = F}
+library("tidyverse")
+library("ggpubr")
+library("grid")
+library("gridExtra")
+library("Biostrings")
+library("lubridate")
+
+library("phyloseq")
+library("vegan")
+
+library("viridis")
+source("~/OneDrive - Nanyang Technological University/common bioinformatics/extra_functions copy.R")
+options(stringsAsFactors = FALSE)
+
+dir_supp <- "./supplementary/"
+dir_main <- "./main/"
+
+```
+
+## Load the previously made file
+```{r}
+# Run for lazy loading
+ps_ts <- readRDS("./19_phyloseq_ts.RDS")
+metadata_ts <- readRDS("./19_metadata_ts.RDS")
+metadata_ts_numsites <- readRDS("./20_metadata_ts_numsites.RDS")
+
+ps_ts_norm <- ps_normalize_median(ps_ts, "time series")
+
+# prep the data
+asvtab_ts <- otu_table(ps_ts_norm)
+asvtab_ts <- as.data.frame(asvtab_ts@.Data)
+
+asv_top8 <- as.data.frame(t(asvtab_ts[c(1:8, 24), ])) %>% 
+  mutate(Sampling.Day = str_c("Day", metadata_ts$Sampling_Day, sep = " "), .before = 1) %>% 
+  mutate(Site = metadata_ts$location, .before = 1)
+
+asv_top30 <- as.data.frame(t(asvtab_ts[1:30, ])) %>% 
+  mutate(Sampling.Day = str_c("Day", metadata_ts$Sampling_Day, sep = " "), .before = 1) %>% 
+  mutate(Site = metadata_ts$location, .before = 1)
+
+asv_top100 <- as.data.frame(t(asvtab_ts[1:100, ])) %>% 
+  mutate(Sampling.Day = str_c("Day", metadata_ts$Sampling_Day, sep = " "), .before = 1) %>% 
+  mutate(Site = metadata_ts$location, .before = 1)
+
+```
+
+
+
+# Do the stuff
+Following https://www.pnas.org/doi/10.1073/pnas.0602399103
+
+## Discriminant Function Analysis
+DFA to predict what day it is based on the OTUs. Get DFA1 metric as a measure of how the community structure looks like.
+
+```{r}
+library(MASS)
+library(caret)
+
+asv_top <- asv_top30
+
+model <- lda(Sampling.Day ~ . , data = asv_top[, 2:ncol(asv_top)])
+predict_day <- predict(model, asv_top[, 3:ncol(asv_top)])
+dfa1 <- data.frame(Site = asv_top30$Site,
+                   Sampling.Day = metadata_ts$Sampling_Day,
+                   DFA1 = predict_day$x[,1])
+
+ggplot(data = dfa1, mapping = aes(x = Sampling.Day, y = DFA1)) +
+  geom_point() +
+  geom_line() +
+  facet_wrap(~Site)
+```
+
+
+## Time Series Analysis
+Autocorrelations to see whether there are temporal patterns to the DFA1 number
+
+```{r}
+library("forecast")
+
+dfa1_sbw <- dfa1 %>% 
+  filter(Site == "Sembawang")
+dfa1_stl <- dfa1 %>% 
+  filter(Site == "Stulang")
+dfa1_snb <- dfa1 %>% 
+  filter(Site == "Senibong")
+dfa1_wdl <- dfa1 %>% 
+  filter(Site == "Woodlands")
+
+acf_sbw <- ggAcf(dfa1_sbw$DFA1, lag.max = 14) + labs(title = "Sembawang")
+acf_stl <- ggAcf(dfa1_stl$DFA1, lag.max = 14) + labs(title = "Stulang")
+acf_snb <- ggAcf(dfa1_snb$DFA1, lag.max = 14) + labs(title = "Senibong")
+acf_wdl <- ggAcf(dfa1_wdl$DFA1, lag.max = 14) + labs(title = "Woodlands")
+
+p_all <- grid.arrange(acf_sbw, acf_stl, acf_snb, acf_wdl, ncol = 2, top = textGrob("DFA1 Autocorrelation", gp = gpar(fontsize = 20)))
+print(p_all)
+#ggsave(paste0(dir_supp, "autocorr_sbw.jpg"), plot = p_all, width = 20, height = 27, units = "cm", dpi = "print")
+
+```
+THERE IS NO TEMPORAL PATTERN. 
+
+
+
+
+
+
+
+
+
+
+
